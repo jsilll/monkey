@@ -1,0 +1,14 @@
+[package]
+name = "monkey"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "interpreter"
+path = "src/bin/interpreter/main.rs"
+
+[[bin]]
+name = "compiler"
+path = "src/bin/compiler/main.rs"
+
+[dependencies]
