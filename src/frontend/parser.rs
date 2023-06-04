@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::iter::Peekable;
 
 use crate::common::operator::Operator;
-use crate::common::parsed_ast::{Expression, Program, Statement};
+use crate::common::parsed_ast::{Expression, Program, Statement, TopLvlStatement};
 use crate::common::position::Position;
 
 use crate::frontend::lexer::Lexer;
@@ -37,6 +37,16 @@ impl Display for LocatedError {
     }
 }
 
+enum Precedence {
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+}
+
 pub struct Parser<'a> {
     lexer: Peekable<Lexer<'a>>,
     fallback_position: Position,
@@ -50,25 +60,48 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn expect_next(&mut self, expected: Token) -> Result<LocatedToken<'a>, LocatedError> {
+        match self.lexer.next() {
+            Some(lt) if std::mem::discriminant(&lt.token) == std::mem::discriminant(&expected) => {
+                Ok(lt)
+            }
+
+            Some(token) => Err(LocatedError {
+                position: token.position,
+                error: Error::UnexpectedToken(token.token.to_string()),
+            }),
+
+            None => Err(LocatedError {
+                error: Error::UnexpectedEof,
+                position: self.fallback_position.clone(),
+            }),
+        }
+    }
+
     pub fn parse(&mut self) -> Result<Program, LocatedError> {
         let mut program = Program::new();
 
         while let Some(lt) = self.lexer.next() {
             match lt.token {
                 Token::Let => {
-                    let statement = self.parse_let_statement()?;
-                    program.statements.push(statement)
+                    let id = self.expect_next(Token::Id(""))?;
+                    self.expect_next(Token::Assign)?;
+                    let expr = self.parse_expression(Precedence::Lowest)?;
+                    self.expect_next(Token::Semi)?;
+                    program.statements.push(TopLvlStatement::Let {
+                        value: expr,
+                        id: id.token.to_string(),
+                    })
                 }
 
-                Token::Return => {
-                    let statement = self.parse_return_statement()?;
-                    program.statements.push(statement)
-                }
+                // TODO: Token::Fn
 
-                Token::If => {
-                    let statement = self.parse_if_statement()?;
-                    program.statements.push(statement)
-                }
+                // TODO: Move this
+                // Token::Return => {
+                //     let expr = self.parse_expression(Precedence::Lowest)?;
+                //     self.expect_next(Token::Semi)?;
+                //     program.statements.push(Statement::Return { value: expr })
+                // }
 
                 Token::Unexpected(c) => {
                     return Err(LocatedError {
@@ -89,68 +122,20 @@ impl<'a> Parser<'a> {
         Ok(program)
     }
 
-    fn advance_or_err(&mut self, expected: Token) -> Result<LocatedToken<'a>, LocatedError> {
-        match self.lexer.next() {
-            Some(lt) if std::mem::discriminant(&lt.token) == std::mem::discriminant(&expected) => {
-                Ok(lt)
-            }
-
-            Some(token) => Err(LocatedError {
-                position: token.position,
-                error: Error::UnexpectedToken(token.token.to_string()),
-            }),
-
-            None => Err(LocatedError {
-                error: Error::UnexpectedEof,
-                position: self.fallback_position.clone(),
-            }),
-        }
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, LocatedError> {
+        self.handle_prefix()
     }
 
-    fn parse_let_statement(&mut self) -> Result<Statement, LocatedError> {
-        let id = self.advance_or_err(Token::Id(""))?;
-        self.advance_or_err(Token::Assign)?;
-        let expr = self.parse_expression()?;
-        Ok(Statement::Let {
-            value: expr,
-            position: id.position,
-            id: id.token.to_string(),
-        })
-    }
-
-    fn parse_return_statement(&mut self) -> Result<Statement, LocatedError> {
-        unimplemented!()
-    }
-
-    fn parse_if_statement(&mut self) -> Result<Statement, LocatedError> {
-        unimplemented!()
-    }
-
-    fn parse_expression(&mut self) -> Result<Expression, LocatedError> {
+    fn handle_prefix(&mut self) -> Result<Expression, LocatedError> {
         let lt = self.lexer.next().ok_or(LocatedError {
             error: Error::UnexpectedEof,
             position: self.fallback_position.clone(),
         })?;
         match lt.token {
-            Token::Int(i) => {
-                let plt = self.lexer.next().ok_or(LocatedError {
-                    error: Error::UnexpectedEof,
-                    position: self.fallback_position.clone(),
-                })?;
-                match plt.token {
-                    Token::Semi => self.parse_integer_literal(i, lt.position.clone()),
-                    Token::Plus => self.parse_operator_expression(i, lt.position.clone()),
-                    _ => Err(LocatedError {
-                        position: plt.position.clone(),
-                        error: Error::UnexpectedToken(plt.token.to_string()),
-                    }),
-                }
-            }
-            Token::LParen => {
-                let expr = self.parse_expression()?;
-                self.advance_or_err(Token::RParen)?;
-                Ok(expr)
-            }
+            Token::Id(id) => Ok(Expression::Lvalue {
+                id: id.to_string(),
+                position: lt.position.clone(),
+            }),
             _ => Err(LocatedError {
                 position: lt.position.clone(),
                 error: Error::UnexpectedToken(lt.token.to_string()),
@@ -158,37 +143,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_operator_expression(
-        &mut self,
-        lhs: &str,
-        position: Position,
-    ) -> Result<Expression, LocatedError> {
-        let value = lhs.parse::<i64>().map_err(|_| LocatedError {
-            error: Error::InvalidInt,
-            position: position.clone(),
-        })?;
-        let lhs = Expression::Integer {
-            value,
-            position: position.clone(),
-        };
-        let rhs = self.parse_expression()?;
-        Ok(Expression::Binary {
-            position,
-            op: Operator::Plus,
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
-        })
-    }
-
-    fn parse_integer_literal(
-        &mut self,
-        i: &str,
-        position: Position,
-    ) -> Result<Expression, LocatedError> {
-        let value = i.parse::<i64>().map_err(|_| LocatedError {
-            error: Error::InvalidInt,
-            position: position.clone(),
-        })?;
-        Ok(Expression::Integer { value, position })
+    fn handle_postfix(&mut self, lt: LocatedToken) -> Result<Expression, LocatedError> {
+        unimplemented!()
     }
 }

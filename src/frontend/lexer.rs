@@ -68,7 +68,7 @@ impl<'a> Lexer<'a> {
 
     fn scan_name(&mut self) -> Option<LocatedToken<'a>> {
         let position = self.position.clone();
-        match self.scan_while(|c| c.is_alphanumeric())? {
+        match self.scan_while(|c| c.is_alphanumeric() || c == '_')? {
             "true" => Some(LocatedToken {
                 position,
                 token: Token::True,
@@ -203,6 +203,111 @@ impl<'a> Iterator for Lexer<'a> {
             }
         } else {
             None
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_lexer() {
+        let source = "let five = 5;
+        let ten = 10;
+        let add = fn(x, y) {
+            x + y;
+        };
+        let result = add(five, ten);
+        !-/*5;
+        5 < 10 > 5;
+        if (5 < 10) {
+            return true;
+        } else {
+            return false;
+        }
+        10 == 10;
+        10 != 9;
+        ";
+        let mut lexer = Lexer::new("test", source);
+        let expected = vec![
+            Token::Let,
+            Token::Id("five"),
+            Token::Assign,
+            Token::Int("5"),
+            Token::Semi,
+            Token::Let,
+            Token::Id("ten"),
+            Token::Assign,
+            Token::Int("10"),
+            Token::Semi,
+            Token::Let,
+            Token::Id("add"),
+            Token::Assign,
+            Token::Fn,
+            Token::LParen,
+            Token::Id("x"),
+            Token::Comma,
+            Token::Id("y"),
+            Token::RParen,
+            Token::LBrace,
+            Token::Id("x"),
+            Token::Plus,
+            Token::Id("y"),
+            Token::Semi,
+            Token::RBrace,
+            Token::Semi,
+            Token::Let,
+            Token::Id("result"),
+            Token::Assign,
+            Token::Id("add"),
+            Token::LParen,
+            Token::Id("five"),
+            Token::Comma,
+            Token::Id("ten"),
+            Token::RParen,
+            Token::Semi,
+            Token::Bang,
+            Token::Minus,
+            Token::Slash,
+            Token::Star,
+            Token::Int("5"),
+            Token::Semi,
+            Token::Int("5"),
+            Token::Lt,
+            Token::Int("10"),
+            Token::Gt,
+            Token::Int("5"),
+            Token::Semi,
+            Token::If,
+            Token::LParen,
+            Token::Int("5"),
+            Token::Lt,
+            Token::Int("10"),
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::True,
+            Token::Semi,
+            Token::RBrace,
+            Token::Else,
+            Token::LBrace,
+            Token::Return,
+            Token::False,
+            Token::Semi,
+            Token::RBrace,
+            Token::Int("10"),
+            Token::Eq,
+            Token::Int("10"),
+            Token::Semi,
+            Token::Int("10"),
+            Token::Neq,
+            Token::Int("9"),
+            Token::Semi,
+        ];
+
+        for (i, (expected, actual)) in expected.iter().zip(lexer.by_ref()).enumerate() {
+            assert_eq!(*expected, actual.token, "Token {} mismatch", i);
         }
     }
 }

@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Token<'a> {
     // Literals
     True,
