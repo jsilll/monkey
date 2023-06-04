@@ -127,49 +127,35 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Result<Expression, LocatedError> {
-        if let Some(lt) = self.lexer.peek() {
-            let expr = match lt.token {
-                Token::Int(i) => {
-                    self.lexer.next();
-                    if let Some(lt) = self.lexer.peek() {
-                        match lt.token {
-                            Token::Plus => self.parse_operator_expression(i, lt.position.clone()),
-
-                            Token::Semi => self.parse_integer_literal(i, lt.position.clone()),
-
-                            _ => Err(LocatedError {
-                                position: lt.position.clone(),
-                                error: Error::UnexpectedToken(lt.token.to_string()),
-                            }),
-                        }
-                    } else {
-                        Err(LocatedError {
-                            error: Error::UnexpectedEof,
-                            position: self.fallback_position.clone(),
-                        })
-                    }
+        let lt = self.lexer.next().ok_or(LocatedError {
+            error: Error::UnexpectedEof,
+            position: self.fallback_position.clone(),
+        })?;
+        match lt.token {
+            Token::Int(i) => {
+                let plt = self.lexer.next().ok_or(LocatedError {
+                    error: Error::UnexpectedEof,
+                    position: self.fallback_position.clone(),
+                })?;
+                match plt.token {
+                    Token::Semi => self.parse_integer_literal(i, lt.position.clone()),
+                    Token::Plus => self.parse_operator_expression(i, lt.position.clone()),
+                    _ => Err(LocatedError {
+                        position: plt.position.clone(),
+                        error: Error::UnexpectedToken(plt.token.to_string()),
+                    }),
                 }
-
-                Token::LParen => self.parse_grouped_expression(),
-
-                _ => Err(LocatedError {
-                    position: lt.position.clone(),
-                    error: Error::UnexpectedToken(lt.token.to_string()),
-                }),
-            };
-
-            self.lexer.next();
-            expr
-        } else {
-            Err(LocatedError {
-                error: Error::UnexpectedEof,
-                position: self.fallback_position.clone(),
-            })
+            }
+            Token::LParen => {
+                let expr = self.parse_expression()?;
+                self.advance_or_err(Token::RParen)?;
+                Ok(expr)
+            }
+            _ => Err(LocatedError {
+                position: lt.position.clone(),
+                error: Error::UnexpectedToken(lt.token.to_string()),
+            }),
         }
-    }
-
-    fn parse_grouped_expression(&mut self) -> Result<Expression, LocatedError> {
-        unimplemented!()
     }
 
     fn parse_operator_expression(
@@ -178,14 +164,13 @@ impl<'a> Parser<'a> {
         position: Position,
     ) -> Result<Expression, LocatedError> {
         let value = lhs.parse::<i64>().map_err(|_| LocatedError {
-            position,
             error: Error::InvalidInt,
+            position: position.clone(),
         })?;
         let lhs = Expression::Integer {
             value,
-            position: position,
+            position: position.clone(),
         };
-        self.lexer.next();
         let rhs = self.parse_expression()?;
         Ok(Expression::Binary {
             position,
@@ -201,8 +186,8 @@ impl<'a> Parser<'a> {
         position: Position,
     ) -> Result<Expression, LocatedError> {
         let value = i.parse::<i64>().map_err(|_| LocatedError {
-            position,
             error: Error::InvalidInt,
+            position: position.clone(),
         })?;
         Ok(Expression::Integer { value, position })
     }
