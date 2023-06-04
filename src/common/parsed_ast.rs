@@ -24,18 +24,21 @@ pub enum Expression {
 pub enum Statement {
     Expression(Expression),
     Return { value: Expression },
+    Var { id: Identifier, value: Expression },
     Let { id: Identifier, value: Expression },
 }
 
+pub type Block = Vec<Statement>;
+
 #[derive(Debug)]
-pub enum TopLvlStatement {
+pub enum TopStatement {
     Let { id: Identifier, value: Expression },
-    Fn { id: Identifier, body: Vec<Statement> },
+    Fn { id: Identifier, body: Block },
 }
 
 #[derive(Debug)]
 pub struct Program {
-    pub statements: Vec<TopLvlStatement>,
+    pub statements: Vec<TopStatement>,
 }
 
 impl Program {

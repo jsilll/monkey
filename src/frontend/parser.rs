@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::iter::Peekable;
 
 use crate::common::operator::Operator;
-use crate::common::parsed_ast::{Expression, Program, Statement, TopLvlStatement};
+use crate::common::parsed_ast::{Block, Expression, Program, Statement, TopStatement};
 use crate::common::position::Position;
 
 use crate::frontend::lexer::Lexer;
@@ -83,33 +83,14 @@ impl<'a> Parser<'a> {
 
         while let Some(lt) = self.lexer.next() {
             match lt.token {
-                Token::Let => {
-                    let id = self.expect_next(Token::Id(""))?;
-                    self.expect_next(Token::Assign)?;
-                    let expr = self.parse_expression(Precedence::Lowest)?;
-                    self.expect_next(Token::Semi)?;
-                    program.statements.push(TopLvlStatement::Let {
-                        value: expr,
-                        id: id.token.to_string(),
-                    })
-                }
-
-                // TODO: Token::Fn
-
-                // TODO: Move this
-                // Token::Return => {
-                //     let expr = self.parse_expression(Precedence::Lowest)?;
-                //     self.expect_next(Token::Semi)?;
-                //     program.statements.push(Statement::Return { value: expr })
-                // }
-
+                Token::Let => program.statements.push(self.parse_top_let()?),
+                Token::Fn => program.statements.push(self.parse_fn_declaration()?),
                 Token::Unexpected(c) => {
                     return Err(LocatedError {
                         position: lt.position,
                         error: Error::UnexpectedChar(c),
                     })
                 }
-
                 _ => {
                     return Err(LocatedError {
                         position: lt.position,
@@ -120,6 +101,70 @@ impl<'a> Parser<'a> {
         }
 
         Ok(program)
+    }
+
+    fn parse_top_let(&mut self) -> Result<TopStatement, LocatedError> {
+        let id = self.expect_next(Token::Id(""))?;
+        self.expect_next(Token::Assign)?;
+        let expr = self.parse_expression(Precedence::Lowest)?;
+        self.expect_next(Token::Semi)?;
+        Ok(TopStatement::Let {
+            value: expr,
+            id: id.token.to_string(),
+        })
+    }
+
+    fn parse_fn_declaration(&mut self) -> Result<TopStatement, LocatedError> {
+        let id = self.expect_next(Token::Id(""))?;
+        self.expect_next(Token::LParen)?;
+        // TODO: Parse Paramters
+        self.expect_next(Token::RParen)?;
+        // TODO: Pare Return Type
+        self.expect_next(Token::LBrace)?;
+        let body = self.parse_block()?;
+        self.expect_next(Token::RBrace)?;
+        Ok(TopStatement::Fn {
+            body,
+            id: id.token.to_string(),
+        })
+    }
+
+    fn parse_block(&mut self) -> Result<Block, LocatedError> {
+        let mut statements = Vec::new();
+        while let Some(lt) = self.lexer.peek() {
+            match lt.token {
+                Token::RBrace => break,
+                Token::Let => statements.push(self.parse_let()?),
+                Token::Return => statements.push(self.parse_return()?),
+                _ => statements.push(self.parse_expression_statement()?),
+            }
+        }
+        Ok(statements)
+    }
+
+    fn parse_let(&mut self) -> Result<Statement, LocatedError> {
+        self.expect_next(Token::Let)?;
+        let id = self.expect_next(Token::Id(""))?;
+        self.expect_next(Token::Assign)?;
+        let expr = self.parse_expression(Precedence::Lowest)?;
+        self.expect_next(Token::Semi)?;
+        Ok(Statement::Let {
+            id: id.token.to_string(),
+            value: expr,
+        })
+    }
+
+    fn parse_return(&mut self) -> Result<Statement, LocatedError> {
+        self.expect_next(Token::Return)?;
+        let expr = self.parse_expression(Precedence::Lowest)?;
+        self.expect_next(Token::Semi)?;
+        Ok(Statement::Return { value: expr })
+    }
+
+    fn parse_expression_statement(&mut self) -> Result<Statement, LocatedError> {
+        let expr = self.parse_expression(Precedence::Lowest)?;
+        self.expect_next(Token::Semi)?;
+        Ok(Statement::Expression(expr))
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, LocatedError> {

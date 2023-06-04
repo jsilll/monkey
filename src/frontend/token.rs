@@ -11,6 +11,7 @@ pub enum Token<'a> {
     // Keywords
     Fn,
     Let,
+    Var,
     Return,
     If,
     Else,
@@ -57,6 +58,7 @@ impl Display for Token<'_> {
 
             Token::Fn => write!(f, "Fn"),
             Token::Let => write!(f, "Let"),
+            Token::Var => write!(f, "Var"),
             Token::Return => write!(f, "Return"),
             Token::If => write!(f, "If"),
             Token::Else => write!(f, "Else"),
