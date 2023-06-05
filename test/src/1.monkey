@@ -1,33 +1,38 @@
-let five = 5;  
+let five = five;  
 
-let ten = 10;
+let ten = ten;
 
-let add = fn(x, y) {  
-  x + y;
-};
+fn add() {  
+    add
+}
 
-let equal = fn(x, y) {  
-  x == y;
-};
+fn equal() {  
+    equal
+}
 
-let notEqual = fn(x, y) {  
-  x != y;
-};
+fn notEqual() {  
+    notEqual;
+    equal
+}
 
-let lt = fn(x, y) {  
-  x < y;
-};
+fn lt() {  
+    let lt = lt;
+    let gt = gt;
+    lt;
+    lt
+}
 
-let gt = fn(x, y) {  
-  x >y;
-};
+fn gt() {  
+    let gt = gt;
+    let lt = lt;
+    gt;
+    gt
+}
 
-let lte = fn(x, y) {  
-  x <= y;
-};
+fn  lte() {  
+    lte
+}
 
-let gte = fn(x, y) {  
-  x >=y;
-};
-
-let result = add(five, ten);
+fn gte() {  
+    gte
+}

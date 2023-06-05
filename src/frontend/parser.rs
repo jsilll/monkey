@@ -1,11 +1,11 @@
 use std::iter::Peekable;
 
-use crate::common::operator::Operator;
-use crate::common::parsed_ast::{Block, Expression, Program, Statement, TopStatement};
+use crate::common::operator::BinOp;
+use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement};
 use crate::common::position::Position;
 
-use crate::frontend::lexer::Lexer;
 use crate::frontend::error::{Error, LocatedError};
+use crate::frontend::lexer::Lexer;
 use crate::frontend::token::{LocatedToken, Token};
 
 enum Precedence {
@@ -111,41 +111,50 @@ impl<'a> Parser<'a> {
         Ok(statements)
     }
 
-    fn parse_let(&mut self) -> Result<Statement, LocatedError> {
+    fn parse_let(&mut self) -> Result<InnerStatement, LocatedError> {
         self.expect_next(Token::Let)?;
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::Assign)?;
         let value = self.parse_expression(Precedence::Lowest)?;
         self.expect_next(Token::Semi)?;
-        Ok(Statement::Let {
+        Ok(InnerStatement::Let {
             value,
             id: id.token.to_string(),
         })
     }
 
-    fn parse_var(&mut self) -> Result<Statement, LocatedError> {
+    fn parse_var(&mut self) -> Result<InnerStatement, LocatedError> {
         self.expect_next(Token::Var)?;
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::Assign)?;
         let value = self.parse_expression(Precedence::Lowest)?;
         self.expect_next(Token::Semi)?;
-        Ok(Statement::Var {
+        Ok(InnerStatement::Var {
             value,
             id: id.token.to_string(),
         })
     }
 
-    fn parse_return(&mut self) -> Result<Statement, LocatedError> {
+    fn parse_return(&mut self) -> Result<InnerStatement, LocatedError> {
         self.expect_next(Token::Return)?;
-        let expr = self.parse_expression(Precedence::Lowest)?;
+        let value = self.parse_expression(Precedence::Lowest)?;
         self.expect_next(Token::Semi)?;
-        Ok(Statement::Return { value: expr })
+        Ok(InnerStatement::Return(value))
     }
 
-    fn parse_expression_statement(&mut self) -> Result<Statement, LocatedError> {
-        let expr = self.parse_expression(Precedence::Lowest)?;
-        self.expect_next(Token::Semi)?;
-        Ok(Statement::Expression(expr))
+    fn parse_expression_statement(&mut self) -> Result<InnerStatement, LocatedError> {
+        let value = self.parse_expression(Precedence::Lowest)?;
+        let lt = self.lexer.peek().ok_or(LocatedError {
+            error: Error::UnexpectedEof,
+            position: self.fallback_position.clone(),
+        })?;
+        match lt.token {
+            Token::Semi => {
+                self.lexer.next();
+                Ok(InnerStatement::Expression(value))
+            }
+            _ => Ok(InnerStatement::Return(value)),
+        }
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, LocatedError> {
@@ -162,6 +171,16 @@ impl<'a> Parser<'a> {
                 id: id.to_string(),
                 position: lt.position.clone(),
             }),
+            Token::Int(i) => {
+                let value = i.parse::<i64>().map_err(|_| LocatedError {
+                    error: Error::InvalidInt,
+                    position: lt.position.clone(),
+                })?;
+                Ok(Expression::IntegerLiteral {
+                    value,
+                    position: lt.position.clone(),
+                })
+            }
             _ => Err(self.handle_unexpected(lt)),
         }
     }

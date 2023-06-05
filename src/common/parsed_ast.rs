@@ -1,4 +1,4 @@
-use crate::common::operator::Operator;
+use crate::common::operator::{BinOp, UnOp};
 use crate::common::position::Position;
 
 type Identifier = String;
@@ -13,27 +13,31 @@ pub enum Expression {
         id: Identifier,
         position: Position,
     },
+    Unary {
+        op: UnOp,
+        rhs: Box<Expression>,
+    },
     Binary {
-        op: Operator,
+        op: BinOp,
         lhs: Box<Expression>,
         rhs: Box<Expression>,
     },
 }
 
 #[derive(Debug)]
-pub enum Statement {
+pub enum InnerStatement {
+    Return(Expression),
     Expression(Expression),
-    Return { value: Expression },
     Var { id: Identifier, value: Expression },
     Let { id: Identifier, value: Expression },
 }
 
-pub type Block = Vec<Statement>;
+pub type Block = Vec<InnerStatement>;
 
 #[derive(Debug)]
 pub enum TopStatement {
-    Let { id: Identifier, value: Expression },
     Fn { id: Identifier, body: Block },
+    Let { id: Identifier, value: Expression },
 }
 
 #[derive(Debug)]
