@@ -1,5 +1,6 @@
+use monkey::frontend::error::Error;
 use monkey::frontend::lexer::Lexer;
-use monkey::frontend::parser::{Error, Parser};
+use monkey::frontend::parser::Parser;
 
 fn main() {
     let fname = "test/src/1.monkey";

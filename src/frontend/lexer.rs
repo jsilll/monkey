@@ -183,7 +183,7 @@ impl<'a> Iterator for Lexer<'a> {
         if let Some((_, c)) = self.chars.peek() {
             match c {
                 c if c.is_numeric() => self.scan_integer(),
-                c if c.is_alphabetic() => self.scan_name(),
+                c if c.is_alphabetic() || *c == '_' => self.scan_name(),
 
                 '=' => self.scan_double_char(),
 

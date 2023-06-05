@@ -25,7 +25,10 @@ fn main() {
 
         match parser.parse() {
             Err(e) => eprintln!("{}", e),
-            Ok(ast) => println!("{:#?}", ast),
+            Ok(program) => match program.statements.len() {
+                0 => (),
+                _ => println!("{:#?}", program),
+            },
         }
     }
 }
