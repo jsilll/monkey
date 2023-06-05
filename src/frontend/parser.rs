@@ -247,6 +247,11 @@ impl<'a> Parser<'a> {
                     rhs,
                     op: UnOp::from_token(&lt.token),
                 })
+            },
+            Token::LParen => {
+                let expr = self.parse_expression(Precedence::Lowest)?;
+                self.expect_next(Token::RParen)?;
+                Ok(expr)
             }
             _ => Err(self.handle_unexpected_token(lt)),
         }
@@ -308,5 +313,20 @@ mod test {
 
         let ast = parse_expression("3 + 4 * 5 == 3 * 1 + 4 * 5").expect("Failed to parse");
         assert_eq!(ast.to_string(), "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))");
+
+        let ast = parse_expression("1 + (2 + 3) + 4").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((1 + (2 + 3)) + 4)");
+
+        let ast = parse_expression("(5 + 5) * 2").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((5 + 5) * 2)");
+
+        let ast = parse_expression("2 / (5 + 5)").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(2 / (5 + 5))");
+
+        let ast = parse_expression("-(5 + 5)").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(- (5 + 5))");
+
+        let ast = parse_expression("!(true == true)").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(! (true == true))");
     }
 }

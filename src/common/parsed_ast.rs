@@ -28,6 +28,15 @@ pub enum Expression {
         lhs: Box<Expression>,
         rhs: Box<Expression>,
     },
+    // If {
+    //     condition: Box<Expression>,
+    //     then: Block,
+    // },
+    // IfElse {
+    //     condition: Box<Expression>,
+    //     then: Block,
+    //     otherwise: Block,
+    // },
 }
 
 impl Display for Expression {
