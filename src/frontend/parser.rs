@@ -36,21 +36,21 @@ impl BinOp {
 
 #[derive(PartialOrd, PartialEq)]
 enum Precedence {
-    Lowest,
-    Equals,
-    LessGreater,
-    Sum,
-    Product,
-    Prefix,
     Call,
+    Prefix,
+    Product,
+    Sum,
+    LessGreater,
+    Equals,
+    Lowest,
 }
 
 impl Precedence {
     fn from_token(token: &Token<'_>) -> Self {
         match token {
             Token::Eq | Token::Neq => Precedence::Equals,
-            Token::Lt | Token::Gt => Precedence::LessGreater,
             Token::Plus | Token::Minus => Precedence::Sum,
+            Token::Lt | Token::Gt => Precedence::LessGreater,
             Token::Star | Token::Slash => Precedence::Product,
             _ => Precedence::Lowest,
         }
@@ -70,7 +70,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn handle_unexpected(&mut self, lt: LocatedToken<'a>) -> LocatedError {
+    fn handle_unexpected_token(&mut self, lt: LocatedToken<'a>) -> LocatedError {
         match lt.token {
             Token::Unexpected(c) => LocatedError {
                 position: lt.position,
@@ -88,7 +88,7 @@ impl<'a> Parser<'a> {
             Some(lt) if std::mem::discriminant(&lt.token) == std::mem::discriminant(&expected) => {
                 Ok(lt)
             }
-            Some(lt) => Err(self.handle_unexpected(lt)),
+            Some(lt) => Err(self.handle_unexpected_token(lt)),
             None => Err(LocatedError {
                 error: Error::UnexpectedEof,
                 position: self.fallback_position.clone(),
@@ -103,7 +103,7 @@ impl<'a> Parser<'a> {
             match lt.token {
                 Token::Fn => program.statements.push(self.parse_top_fn()?),
                 Token::Let => program.statements.push(self.parse_top_let()?),
-                _ => return Err(self.handle_unexpected(lt)),
+                _ => return Err(self.handle_unexpected_token(lt)),
             }
         }
 
@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
         self.expect_next(Token::LParen)?;
         // TODO: Parse Paramters
         self.expect_next(Token::RParen)?;
-        // TODO: Pare Return Type
+        // TODO: Parse Return Type
         self.expect_next(Token::LBrace)?;
         let body = self.parse_block()?;
         self.expect_next(Token::RBrace)?;
@@ -206,7 +206,6 @@ impl<'a> Parser<'a> {
             {
                 break;
             } else {
-                self.lexer.next();
                 lhs = self.handle_infix_token(lhs)?;
             }
         }
@@ -241,7 +240,7 @@ impl<'a> Parser<'a> {
                     op: UnOp::from_token(&lt.token),
                 })
             }
-            _ => Err(self.handle_unexpected(lt)),
+            _ => Err(self.handle_unexpected_token(lt)),
         }
     }
 
