@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use crate::common::operator::BinOp;
+use crate::common::operator::{BinOp, UnOp};
 use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement};
 use crate::common::position::Position;
 
@@ -8,6 +8,33 @@ use crate::frontend::error::{Error, LocatedError};
 use crate::frontend::lexer::Lexer;
 use crate::frontend::token::{LocatedToken, Token};
 
+impl UnOp {
+    fn from_token(token: &Token<'_>) -> Self {
+        match token {
+            Token::Bang => UnOp::Bang,
+            Token::Minus => UnOp::Minus,
+            _ => panic!("Invalid token for UnOp"),
+        }
+    }
+}
+
+impl BinOp {
+    fn from_token(token: &Token<'_>) -> Self {
+        match token {
+            Token::Plus => BinOp::Plus,
+            Token::Minus => BinOp::Minus,
+            Token::Star => BinOp::Star,
+            Token::Slash => BinOp::Slash,
+            Token::Eq => BinOp::Eq,
+            Token::Neq => BinOp::Neq,
+            Token::Lt => BinOp::Lt,
+            Token::Gt => BinOp::Gt,
+            _ => panic!("Invalid token for BinOp"),
+        }
+    }
+}
+
+#[derive(PartialOrd, PartialEq)]
 enum Precedence {
     Lowest,
     Equals,
@@ -16,6 +43,18 @@ enum Precedence {
     Product,
     Prefix,
     Call,
+}
+
+impl Precedence {
+    fn from_token(token: &Token<'_>) -> Self {
+        match token {
+            Token::Eq | Token::Neq => Precedence::Equals,
+            Token::Lt | Token::Gt => Precedence::LessGreater,
+            Token::Plus | Token::Minus => Precedence::Sum,
+            Token::Star | Token::Slash => Precedence::Product,
+            _ => Precedence::Lowest,
+        }
+    }
 }
 
 pub struct Parser<'a> {
@@ -62,8 +101,8 @@ impl<'a> Parser<'a> {
 
         while let Some(lt) = self.lexer.next() {
             match lt.token {
+                Token::Fn => program.statements.push(self.parse_top_fn()?),
                 Token::Let => program.statements.push(self.parse_top_let()?),
-                Token::Fn => program.statements.push(self.parse_fn_declaration()?),
                 _ => return Err(self.handle_unexpected(lt)),
             }
         }
@@ -82,7 +121,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_fn_declaration(&mut self) -> Result<TopStatement, LocatedError> {
+    fn parse_top_fn(&mut self) -> Result<TopStatement, LocatedError> {
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::LParen)?;
         // TODO: Parse Paramters
@@ -102,16 +141,16 @@ impl<'a> Parser<'a> {
         while let Some(lt) = self.lexer.peek() {
             match lt.token {
                 Token::RBrace => break,
-                Token::Let => statements.push(self.parse_let()?),
-                Token::Var => statements.push(self.parse_var()?),
-                Token::Return => statements.push(self.parse_return()?),
+                Token::Let => statements.push(self.parse_inner_let()?),
+                Token::Var => statements.push(self.parse_inner_var()?),
+                Token::Return => statements.push(self.parse_inner_return()?),
                 _ => statements.push(self.parse_expression_statement()?),
             }
         }
         Ok(statements)
     }
 
-    fn parse_let(&mut self) -> Result<InnerStatement, LocatedError> {
+    fn parse_inner_let(&mut self) -> Result<InnerStatement, LocatedError> {
         self.expect_next(Token::Let)?;
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::Assign)?;
@@ -123,7 +162,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_var(&mut self) -> Result<InnerStatement, LocatedError> {
+    fn parse_inner_var(&mut self) -> Result<InnerStatement, LocatedError> {
         self.expect_next(Token::Var)?;
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::Assign)?;
@@ -135,7 +174,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_return(&mut self) -> Result<InnerStatement, LocatedError> {
+    fn parse_inner_return(&mut self) -> Result<InnerStatement, LocatedError> {
         self.expect_next(Token::Return)?;
         let value = self.parse_expression(Precedence::Lowest)?;
         self.expect_next(Token::Semi)?;
@@ -158,7 +197,21 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, LocatedError> {
-        self.handle_prefix_token()
+        let mut lhs = self.handle_prefix_token()?;
+
+        while let Some(lt) = self.lexer.peek() {
+            if lt.token == Token::Semi
+                || lt.token == Token::RBrace
+                || precedence < Precedence::from_token(&lt.token)
+            {
+                break;
+            } else {
+                self.lexer.next();
+                lhs = self.handle_infix_token(lhs)?;
+            }
+        }
+
+        Ok(lhs)
     }
 
     fn handle_prefix_token(&mut self) -> Result<Expression, LocatedError> {
@@ -180,22 +233,29 @@ impl<'a> Parser<'a> {
                     value,
                     position: lt.position.clone(),
                 })
-            },
-            Token::Minus => {
-                let rhs = Box::new(self.parse_expression(Precedence::Prefix)?);
-                Ok(Expression::Unary {
-                    op: crate::common::operator::UnOp::Minus,
-                    rhs,
-                })
             }
-            Token::Bang => {
+            Token::Minus | Token::Bang => {
                 let rhs = Box::new(self.parse_expression(Precedence::Prefix)?);
                 Ok(Expression::Unary {
-                    op: crate::common::operator::UnOp::Bang,
                     rhs,
+                    op: UnOp::from_token(&lt.token),
                 })
             }
             _ => Err(self.handle_unexpected(lt)),
         }
+    }
+
+    fn handle_infix_token(&mut self, lhs: Expression) -> Result<Expression, LocatedError> {
+        let lt = self.lexer.next().ok_or(LocatedError {
+            error: Error::UnexpectedEof,
+            position: self.fallback_position.clone(),
+        })?;
+        let precedence = Precedence::from_token(&lt.token);
+        let rhs = self.parse_expression(precedence)?;
+        Ok(Expression::Binary {
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+            op: BinOp::from_token(&lt.token),
+        })
     }
 }
