@@ -1,8 +1,9 @@
+let two = 2;
+let four = 4;
 let five = 5;
 let ten = 10;
 
 fn main() {
-    let res = five + 2 * ten;
-    let res2 = res + ten;
-    res == res2
+    var res = ten * five;
+    res == 50
 }

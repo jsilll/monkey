@@ -34,15 +34,15 @@ impl BinOp {
     }
 }
 
-#[derive(PartialOrd, PartialEq)]
+#[derive(PartialOrd, PartialEq, Eq)]
 enum Precedence {
-    Call,
-    Prefix,
-    Product,
-    Sum,
-    LessGreater,
-    Equals,
     Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
 }
 
 impl Precedence {
@@ -202,7 +202,7 @@ impl<'a> Parser<'a> {
         while let Some(lt) = self.lexer.peek() {
             if lt.token == Token::Semi
                 || lt.token == Token::RBrace
-                || precedence < Precedence::from_token(&lt.token)
+                || precedence >= Precedence::from_token(&lt.token)
             {
                 break;
             } else {
@@ -299,9 +299,6 @@ mod test {
 
         let ast = parse_expression("a + b * c + d / e - f").expect("Failed to parse");
         assert_eq!(ast.to_string(), "(((a + (b * c)) + (d / e)) - f)");
-
-        let ast = parse_expression("3 + 4; -5 * 5").expect("Failed to parse");
-        assert_eq!(ast.to_string(), "(3 + 4)((-5) * 5))");
 
         let ast = parse_expression("5 > 4 == 3 < 4").expect("Failed to parse");
         assert_eq!(ast.to_string(), "((5 > 4) == (3 < 4))");
