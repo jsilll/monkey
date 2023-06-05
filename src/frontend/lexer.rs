@@ -89,6 +89,11 @@ impl<'a> Lexer<'a> {
                 token: Token::Let,
             }),
 
+            "var" => Some(LocatedToken {
+                position,
+                token: Token::Var,
+            }),
+
             "return" => Some(LocatedToken {
                 position,
                 token: Token::Return,

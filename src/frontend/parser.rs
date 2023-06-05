@@ -60,17 +60,25 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn handle_unexpected(&mut self, lt: LocatedToken<'a>) -> LocatedError {
+        match lt.token {
+            Token::Unexpected(c) => LocatedError {
+                position: lt.position,
+                error: Error::UnexpectedChar(c),
+            },
+            _ => LocatedError {
+                position: lt.position,
+                error: Error::UnexpectedToken(lt.token.to_string()),
+            },
+        }
+    }
+
     fn expect_next(&mut self, expected: Token) -> Result<LocatedToken<'a>, LocatedError> {
         match self.lexer.next() {
             Some(lt) if std::mem::discriminant(&lt.token) == std::mem::discriminant(&expected) => {
                 Ok(lt)
             }
-
-            Some(token) => Err(LocatedError {
-                position: token.position,
-                error: Error::UnexpectedToken(token.token.to_string()),
-            }),
-
+            Some(lt) => Err(self.handle_unexpected(lt)),
             None => Err(LocatedError {
                 error: Error::UnexpectedEof,
                 position: self.fallback_position.clone(),
@@ -85,18 +93,7 @@ impl<'a> Parser<'a> {
             match lt.token {
                 Token::Let => program.statements.push(self.parse_top_let()?),
                 Token::Fn => program.statements.push(self.parse_fn_declaration()?),
-                Token::Unexpected(c) => {
-                    return Err(LocatedError {
-                        position: lt.position,
-                        error: Error::UnexpectedChar(c),
-                    })
-                }
-                _ => {
-                    return Err(LocatedError {
-                        position: lt.position,
-                        error: Error::UnexpectedToken(lt.token.to_string()),
-                    })
-                }
+                _ => return Err(self.handle_unexpected(lt)),
             }
         }
 
@@ -106,10 +103,10 @@ impl<'a> Parser<'a> {
     fn parse_top_let(&mut self) -> Result<TopStatement, LocatedError> {
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::Assign)?;
-        let expr = self.parse_expression(Precedence::Lowest)?;
+        let value = self.parse_expression(Precedence::Lowest)?;
         self.expect_next(Token::Semi)?;
         Ok(TopStatement::Let {
-            value: expr,
+            value,
             id: id.token.to_string(),
         })
     }
@@ -135,6 +132,7 @@ impl<'a> Parser<'a> {
             match lt.token {
                 Token::RBrace => break,
                 Token::Let => statements.push(self.parse_let()?),
+                Token::Var => statements.push(self.parse_var()?),
                 Token::Return => statements.push(self.parse_return()?),
                 _ => statements.push(self.parse_expression_statement()?),
             }
@@ -146,11 +144,23 @@ impl<'a> Parser<'a> {
         self.expect_next(Token::Let)?;
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::Assign)?;
-        let expr = self.parse_expression(Precedence::Lowest)?;
+        let value = self.parse_expression(Precedence::Lowest)?;
         self.expect_next(Token::Semi)?;
         Ok(Statement::Let {
+            value,
             id: id.token.to_string(),
-            value: expr,
+        })
+    }
+
+    fn parse_var(&mut self) -> Result<Statement, LocatedError> {
+        self.expect_next(Token::Var)?;
+        let id = self.expect_next(Token::Id(""))?;
+        self.expect_next(Token::Assign)?;
+        let value = self.parse_expression(Precedence::Lowest)?;
+        self.expect_next(Token::Semi)?;
+        Ok(Statement::Var {
+            value,
+            id: id.token.to_string(),
         })
     }
 
@@ -181,14 +191,7 @@ impl<'a> Parser<'a> {
                 id: id.to_string(),
                 position: lt.position.clone(),
             }),
-            _ => Err(LocatedError {
-                position: lt.position.clone(),
-                error: Error::UnexpectedToken(lt.token.to_string()),
-            }),
+            _ => Err(self.handle_unexpected(lt)),
         }
-    }
-
-    fn handle_postfix(&mut self, lt: LocatedToken) -> Result<Expression, LocatedError> {
-        unimplemented!()
     }
 }
