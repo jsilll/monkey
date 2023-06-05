@@ -13,7 +13,7 @@ impl UnOp {
         match token {
             Token::Bang => UnOp::Bang,
             Token::Minus => UnOp::Minus,
-            _ => panic!("Invalid token for UnOp"),
+            _ => unreachable!(),
         }
     }
 }
@@ -29,7 +29,7 @@ impl BinOp {
             Token::Neq => BinOp::Neq,
             Token::Lt => BinOp::Lt,
             Token::Gt => BinOp::Gt,
-            _ => panic!("Invalid token for BinOp"),
+            _ => unreachable!(),
         }
     }
 }
