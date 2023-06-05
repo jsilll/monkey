@@ -3,5 +3,6 @@ let ten = 10;
 
 fn main() {
     let res = five + 2 * ten;
-    res == 1
+    let res2 = res + ten;
+    res == res2
 }

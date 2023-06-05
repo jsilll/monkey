@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::common::position::Position;
 
+#[derive(Debug)]
 pub enum Error {
     InvalidInt,
     UnexpectedEof,
@@ -20,6 +21,7 @@ impl Display for Error {
     }
 }
 
+#[derive(Debug)]
 pub struct LocatedError {
     pub error: Error,
     pub position: Position,

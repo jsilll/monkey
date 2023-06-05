@@ -219,9 +219,13 @@ impl<'a> Parser<'a> {
             position: self.fallback_position.clone(),
         })?;
         match lt.token {
-            Token::Id(id) => Ok(Expression::Lvalue {
-                id: id.to_string(),
-                position: lt.position.clone(),
+            Token::True => Ok(Expression::BooleanLiteral {
+                value: true,
+                position: lt.position,
+            }),
+            Token::False => Ok(Expression::BooleanLiteral {
+                value: false,
+                position: lt.position,
             }),
             Token::Int(i) => {
                 let value = i.parse::<i64>().map_err(|_| LocatedError {
@@ -230,9 +234,13 @@ impl<'a> Parser<'a> {
                 })?;
                 Ok(Expression::IntegerLiteral {
                     value,
-                    position: lt.position.clone(),
+                    position: lt.position,
                 })
             }
+            Token::Id(id) => Ok(Expression::Lvalue {
+                id: id.to_string(),
+                position: lt.position,
+            }),
             Token::Minus | Token::Bang => {
                 let rhs = Box::new(self.parse_expression(Precedence::Prefix)?);
                 Ok(Expression::Unary {
@@ -256,5 +264,52 @@ impl<'a> Parser<'a> {
             rhs: Box::new(rhs),
             op: BinOp::from_token(&lt.token),
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn parse_expression(input: &str) -> Result<Expression, LocatedError> {
+        let lexer = Lexer::new("test", input);
+        let mut parser = Parser::new(lexer);
+        parser.parse_expression(Precedence::Lowest)
+    }
+
+    #[test]
+    fn test_parser() {
+        let ast = parse_expression("!-a").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(! (- a))");
+    
+        let ast = parse_expression("a + b + c").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((a + b) + c)");
+
+        let ast = parse_expression("a + b - c").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((a + b) - c)");
+
+        let ast = parse_expression("a * b * c").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((a * b) * c)");
+
+        let ast = parse_expression("a * b / c").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((a * b) / c)");
+
+        let ast = parse_expression("a + b / c").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(a + (b / c))");
+
+        let ast = parse_expression("a + b * c + d / e - f").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(((a + (b * c)) + (d / e)) - f)");
+
+        let ast = parse_expression("3 + 4; -5 * 5").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(3 + 4)((-5) * 5))");
+
+        let ast = parse_expression("5 > 4 == 3 < 4").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((5 > 4) == (3 < 4))");
+
+        let ast = parse_expression("5 < 4 != 3 > 4").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((5 < 4) != (3 > 4))");
+
+        let ast = parse_expression("3 + 4 * 5 == 3 * 1 + 4 * 5").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))");
     }
 }
