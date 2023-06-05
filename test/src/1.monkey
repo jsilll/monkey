@@ -1,38 +1,13 @@
-let five = five;  
+let five = 5;
 
-let ten = ten;
+let ten = 10;
 
-fn add() {  
-    add
+fn invert1() {
+    let res = -five;
+    res
 }
 
-fn equal() {  
-    equal
-}
-
-fn notEqual() {  
-    notEqual;
-    equal
-}
-
-fn lt() {  
-    let lt = lt;
-    let gt = gt;
-    lt;
-    lt
-}
-
-fn gt() {  
-    let gt = gt;
-    let lt = lt;
-    gt;
-    gt
-}
-
-fn  lte() {  
-    lte
-}
-
-fn gte() {  
-    gte
+fn invert2() {
+    let res = -ten;
+    return res;
 }

@@ -158,10 +158,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, LocatedError> {
-        self.handle_prefix()
+        self.handle_prefix_token()
     }
 
-    fn handle_prefix(&mut self) -> Result<Expression, LocatedError> {
+    fn handle_prefix_token(&mut self) -> Result<Expression, LocatedError> {
         let lt = self.lexer.next().ok_or(LocatedError {
             error: Error::UnexpectedEof,
             position: self.fallback_position.clone(),
@@ -179,6 +179,20 @@ impl<'a> Parser<'a> {
                 Ok(Expression::IntegerLiteral {
                     value,
                     position: lt.position.clone(),
+                })
+            },
+            Token::Minus => {
+                let rhs = Box::new(self.parse_expression(Precedence::Prefix)?);
+                Ok(Expression::Unary {
+                    op: crate::common::operator::UnOp::Minus,
+                    rhs,
+                })
+            }
+            Token::Bang => {
+                let rhs = Box::new(self.parse_expression(Precedence::Prefix)?);
+                Ok(Expression::Unary {
+                    op: crate::common::operator::UnOp::Bang,
+                    rhs,
                 })
             }
             _ => Err(self.handle_unexpected(lt)),
