@@ -283,7 +283,7 @@ mod test {
     }
 
     #[test]
-    fn test_parser() {
+    fn test_expression() {
         let ast = parse_expression("!-a").expect("Failed to parse");
         assert_eq!(ast.to_string(), "(! (- a))");
     
@@ -328,5 +328,59 @@ mod test {
 
         let ast = parse_expression("!(true == true)").expect("Failed to parse");
         assert_eq!(ast.to_string(), "(! (true == true))");
+    }
+
+    fn parse_expression_statement(input: &str) -> Result<InnerStatement, LocatedError> {
+        let lexer = Lexer::new("test", input);
+        let mut parser = Parser::new(lexer);
+        parser.parse_expression_statement()
+    }
+
+    #[test]
+    fn test_expression_statement() {
+        let ast = parse_expression_statement("a + b;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(a + b);");
+
+        let ast = parse_expression_statement("a + b + c;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((a + b) + c);");
+
+        let ast = parse_expression_statement("a + b - c }").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "return ((a + b) - c);");
+
+        let ast = parse_expression_statement("a * b * c;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((a * b) * c);");
+
+        let ast = parse_expression_statement("a * b / c }").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "return ((a * b) / c);");
+
+        let ast = parse_expression_statement("a + b / c;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(a + (b / c));");
+
+        let ast = parse_expression_statement("a + b * c + d / e - f }").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "return (((a + (b * c)) + (d / e)) - f);");
+
+        let ast = parse_expression_statement("5 > 4 == 3 < 4;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((5 > 4) == (3 < 4));");
+
+        let ast = parse_expression_statement("5 < 4 != 3 > 4 }").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "return ((5 < 4) != (3 > 4));");
+
+        let ast = parse_expression_statement("3 + 4 * 5 == 3 * 1 + 4 * 5;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));");
+
+        let ast = parse_expression_statement("1 + (2 + 3) + 4;").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "((1 + (2 + 3)) + 4);");
+
+        let ast = parse_expression_statement("(5 + 5) * 2 }").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "return ((5 + 5) * 2);");
+
+        let ast = parse_expression_statement("2 / (5 + 5);").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(2 / (5 + 5));");
+
+        let ast = parse_expression_statement("-(5 + 5) }").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "return (- (5 + 5));");
+
+        let ast = parse_expression_statement("!(true == true);").expect("Failed to parse");
+        assert_eq!(ast.to_string(), "(! (true == true));");
     }
 }
