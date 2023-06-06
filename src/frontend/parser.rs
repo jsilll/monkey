@@ -1,12 +1,12 @@
 use std::iter::Peekable;
 
-use crate::common::operator::{BinOp, UnOp};
+use crate::common::operators::{BinOp, UnOp};
 use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement};
-use crate::common::position::Position;
+use crate::common::Position;
 
-use crate::frontend::error::{Error, LocatedError};
 use crate::frontend::lexer::Lexer;
 use crate::frontend::token::{LocatedToken, Token};
+use crate::frontend::{Error, LocatedError};
 
 impl UnOp {
     fn from_token(token: &Token<'_>) -> Self {
@@ -98,7 +98,6 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Result<Program, LocatedError> {
         let mut program = Program::new();
-
         while let Some(lt) = self.lexer.next() {
             match lt.token {
                 Token::Fn => program.statements.push(self.parse_top_fn()?),
@@ -106,7 +105,6 @@ impl<'a> Parser<'a> {
                 _ => return Err(self.handle_unexpected_token(lt)),
             }
         }
-
         Ok(program)
     }
 
@@ -198,7 +196,6 @@ impl<'a> Parser<'a> {
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, LocatedError> {
         let mut lhs = self.handle_prefix_token()?;
-
         while let Some(lt) = self.lexer.peek() {
             if lt.token == Token::Semi
                 || lt.token == Token::RBrace
@@ -209,7 +206,6 @@ impl<'a> Parser<'a> {
                 lhs = self.handle_infix_token(lhs)?;
             }
         }
-
         Ok(lhs)
     }
 
@@ -247,7 +243,7 @@ impl<'a> Parser<'a> {
                     rhs,
                     op: UnOp::from_token(&lt.token),
                 })
-            },
+            }
             Token::LParen => {
                 let expr = self.parse_expression(Precedence::Lowest)?;
                 self.expect_next(Token::RParen)?;
@@ -286,7 +282,7 @@ mod test {
     fn test_expression() {
         let ast = parse_expression("!-a").expect("Failed to parse");
         assert_eq!(ast.to_string(), "(! (- a))");
-    
+
         let ast = parse_expression("a + b + c").expect("Failed to parse");
         assert_eq!(ast.to_string(), "((a + b) + c)");
 
@@ -365,7 +361,8 @@ mod test {
         let ast = parse_expression_statement("5 < 4 != 3 > 4 }").expect("Failed to parse");
         assert_eq!(ast.to_string(), "return ((5 < 4) != (3 > 4));");
 
-        let ast = parse_expression_statement("3 + 4 * 5 == 3 * 1 + 4 * 5;").expect("Failed to parse");
+        let ast =
+            parse_expression_statement("3 + 4 * 5 == 3 * 1 + 4 * 5;").expect("Failed to parse");
         assert_eq!(ast.to_string(), "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));");
 
         let ast = parse_expression_statement("1 + (2 + 3) + 4;").expect("Failed to parse");

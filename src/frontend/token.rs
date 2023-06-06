@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use crate::common::position::Position;
+use crate::common::Position;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token<'a> {
@@ -25,7 +25,7 @@ pub enum Token<'a> {
     Star,
     Slash,
     // Comparison Operators
-    Eq, 
+    Eq,
     Neq,
     Lt,
     Gt,

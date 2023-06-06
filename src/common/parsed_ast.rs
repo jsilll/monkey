@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
-use crate::common::operator::{BinOp, UnOp};
-use crate::common::position::Position;
+use crate::common::operators::{BinOp, UnOp};
+use crate::common::Position;
 
 type Identifier = String;
 

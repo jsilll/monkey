@@ -1,6 +1,6 @@
 use monkey::common::parsed_ast::Program;
 
-use monkey::frontend::error::LocatedError;
+use monkey::frontend::LocatedError;
 use monkey::frontend::lexer::Lexer;
 use monkey::frontend::parser::Parser;
 
@@ -16,13 +16,13 @@ fn main() {
 
     let program = parse(fname, &source).unwrap_or_else(|e| {
         match e.error {
-            monkey::frontend::error::Error::UnexpectedChar(_) => {
+            monkey::frontend::Error::UnexpectedChar(_) => {
                 eprintln!("Lexer error: {}", e);
             }
 
-            monkey::frontend::error::Error::UnexpectedToken(_)
-            | monkey::frontend::error::Error::UnexpectedEof
-            | monkey::frontend::error::Error::InvalidInt => {
+            monkey::frontend::Error::UnexpectedToken(_)
+            | monkey::frontend::Error::UnexpectedEof
+            | monkey::frontend::Error::InvalidInt => {
                 eprintln!("Parser error: {}", e);
             }
         };

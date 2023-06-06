@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::str::CharIndices;
 
-use crate::common::position::Position;
+use crate::common::Position;
 use crate::frontend::token::{LocatedToken, Token};
 
 pub struct Lexer<'a> {
