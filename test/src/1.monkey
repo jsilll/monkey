@@ -1,9 +1,9 @@
-let two = 2;
-let four = 4;
-let five = 5;
-let ten = 10;
+let x = if true { 10 } else { 5 };
 
 fn main() {
-    var res = ten * five;
-    res == 50
+    if (x == 10) {
+        0
+    } else {
+        1
+    }
 }

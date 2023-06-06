@@ -248,6 +248,31 @@ impl<'a> Parser<'a> {
                 let expr = self.parse_expression(Precedence::Lowest)?;
                 self.expect_next(Token::RParen)?;
                 Ok(expr)
+            },
+            Token::If => {
+                let condition = self.parse_expression(Precedence::Lowest)?;
+                self.expect_next(Token::LBrace)?;
+                let consequence = self.parse_block()?;
+                self.expect_next(Token::RBrace)?;
+                let otherwise = if let Some(lt) = self.lexer.peek() {
+                    match lt.token {
+                        Token::Else => {
+                            self.lexer.next();
+                            self.expect_next(Token::LBrace)?;
+                            let block = self.parse_block()?;
+                            self.expect_next(Token::RBrace)?;
+                            Some(block)
+                        }
+                        _ => None,
+                    }
+                } else {
+                    None
+                };
+                Ok(Expression::If {
+                    condition: Box::new(condition),
+                    consequence,
+                    otherwise,
+                })
             }
             _ => Err(self.handle_unexpected_token(lt)),
         }

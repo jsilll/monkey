@@ -28,6 +28,11 @@ pub enum Expression {
         lhs: Box<Expression>,
         rhs: Box<Expression>,
     },
+    If {
+        condition: Box<Expression>,
+        consequence: Block,
+        otherwise: Option<Block>,
+    },
 }
 
 impl Display for Expression {
@@ -38,6 +43,25 @@ impl Display for Expression {
             Expression::Lvalue { id, .. } => write!(f, "{}", id),
             Expression::Unary { op, rhs } => write!(f, "({} {})", op, rhs),
             Expression::Binary { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
+            Expression::If {
+                condition,
+                consequence,
+                otherwise,
+            } => {
+                write!(f, "if {} {{", condition)?;
+                for statement in consequence {
+                    writeln!(f, " {}", statement)?;
+                }
+                write!(f, "}}")?;
+                if let Some(otherwise) = otherwise {
+                    write!(f, " else {{")?;
+                    for statement in otherwise {
+                        writeln!(f, " {}", statement)?;
+                    }
+                    write!(f, "}}")?;
+                }
+                Ok(())
+            }
         }
     }
 }
