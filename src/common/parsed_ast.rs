@@ -4,7 +4,7 @@ use crate::common::operators::{BinOp, UnOp};
 use crate::common::types::Type;
 use crate::common::Position;
 
-type Identifier = String;
+pub type Identifier = String;
 
 #[derive(Debug)]
 pub enum Expression {

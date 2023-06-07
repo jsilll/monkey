@@ -1,22 +1,13 @@
 use std::iter::Peekable;
 
 use crate::common::operators::{BinOp, UnOp};
-use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement};
+use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement, Identifier};
 use crate::common::Position;
 use crate::common::types::Type;
 
 use crate::frontend::lexer::Lexer;
 use crate::frontend::token::{LocatedToken, Token};
 use crate::frontend::{Error, LocatedError};
-
-impl Type {
-    fn from_token(token: &Token<'_>) -> Self {
-        match token {
-            Token::IntType => Type::Int,
-            _ => unreachable!(),
-        }
-    } 
-}
 
 impl UnOp {
     fn from_token(token: &Token<'_>) -> Self {
@@ -134,32 +125,48 @@ impl<'a> Parser<'a> {
         self.expect_next(Token::LParen)?;
 
         // Parse Paramters
-        let mut params = Vec::new();
-        while let Some(lt) = self.lexer.next() {
-            match lt.token {
-                Token::RParen => break,
-                Token::Id(id) => {
-                    self.expect_next(Token::Colon)?;
-                    self.expect_next(Token::IntType)?;
-                    params.push((id.to_string(), Type::Int));
-                }
-                _ => return Err(self.handle_unexpected_token(lt)),
-            }
-        }
+        let params = self.parse_top_fn_params()?; 
 
         // Parse Return Type
         self.expect_next(Token::Arrow)?;
-        let rtype = self.expect_next(Token::IntType)?;
+        let rtype = self.parse_type()?;
 
         self.expect_next(Token::LBrace)?;
         let body = self.parse_block()?;
         self.expect_next(Token::RBrace)?;
         Ok(TopStatement::Fn {
             body,
+            rtype,
             params,
             id: id.token.to_string(),
-            rtype: Type::from_token(&rtype.token),
         })
+    }
+
+    fn parse_top_fn_params(&mut self) -> Result<Vec<(Identifier, Type)>, LocatedError> {
+        let mut params = Vec::new();
+        while let Some(lt) = self.lexer.next() {
+            match lt.token {
+                Token::Id(id) => {
+                    self.expect_next(Token::Colon)?;
+                    let ty = self.parse_type()?;
+                    params.push((id.to_string(), ty));
+                }
+                Token::RParen => break,
+                _ => return Err(self.handle_unexpected_token(lt)),
+            }
+        }
+        Ok(params)
+    }
+
+    fn parse_type(&mut self) -> Result<Type, LocatedError> {
+        let lt = self.lexer.next().ok_or(LocatedError {
+            error: Error::UnexpectedEof,
+            position: self.fallback_position.clone(),
+        })?;
+        match lt.token {
+            Token::IntType => Ok(Type::Int),
+            _ => Err(self.handle_unexpected_token(lt)),
+        }
     }
 
     fn parse_block(&mut self) -> Result<Block, LocatedError> {
