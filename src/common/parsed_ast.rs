@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::common::operators::{BinOp, UnOp};
+use crate::common::types::Type;
 use crate::common::Position;
 
 type Identifier = String;
@@ -89,21 +90,44 @@ pub type Block = Vec<InnerStatement>;
 
 #[derive(Debug)]
 pub enum TopStatement {
-    Fn { id: Identifier, body: Block },
-    Let { id: Identifier, value: Expression },
+    Let {
+        id: Identifier,
+        value: Expression,
+    },
+    Fn {
+        id: Identifier,
+        rtype: Type,
+        params: Vec<(Identifier, Type)>,
+        body: Block,
+    },
 }
 
 impl Display for TopStatement {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            TopStatement::Fn { id, body } => {
-                writeln!(f, "fn {}() {{", id)?;
+            TopStatement::Let { id, value } => writeln!(f, "let {} = {};", id, value),
+            TopStatement::Fn {
+                rtype,
+                body,
+                id,
+                params,
+            } => {
+                write!(
+                    f,
+                    "fn {}({}) -> {} {{",
+                    id,
+                    params
+                        .iter()
+                        .map(|(id, t)| format!("{}: {}", id, t))
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                    rtype
+                )?;
                 for statement in body {
                     writeln!(f, " {}", statement)?;
                 }
-                writeln!(f, "}}")
+                write!(f, "}}")
             }
-            TopStatement::Let { id, value } => writeln!(f, "let {} = {};", id, value),
         }
     }
 }

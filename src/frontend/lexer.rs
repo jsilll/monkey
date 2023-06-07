@@ -109,6 +109,11 @@ impl<'a> Lexer<'a> {
                 token: Token::Else,
             }),
 
+            "i64" => Some(LocatedToken {
+                position,
+                token: Token::IntType,
+            }),
+
             id => Some(LocatedToken {
                 position,
                 token: Token::Id(id),
@@ -135,16 +140,17 @@ impl<'a> Lexer<'a> {
     fn scan_double_char(&mut self) -> Option<LocatedToken<'a>> {
         let position = self.position.clone();
         self.position.column += 1;
-        let (res, fall) = match self.chars.next()?.1 {
-            '=' => (Token::Eq, Token::Assign),
-            '!' => (Token::Neq, Token::Bang),
-            '<' => (Token::Lte, Token::Lt),
-            '>' => (Token::Gte, Token::Gt),
+        let (exp, res, fall) = match self.chars.next()?.1 {
+            '>' => ('=', Token::Gte, Token::Gt),
+            '<' => ('=', Token::Lte, Token::Lt),
+            '!' => ('=', Token::Neq, Token::Bang),
+            '=' => ('=', Token::Eq, Token::Assign),
+            '-' => ('>', Token::Arrow, Token::Minus),
             _ => unreachable!(),
         };
         Some(LocatedToken {
             position,
-            token: self.make_double_char('=', res, fall)?,
+            token: self.make_double_char(exp, res, fall)?,
         })
     }
 
@@ -188,7 +194,7 @@ impl<'a> Iterator for Lexer<'a> {
                 '=' => self.scan_double_char(),
 
                 '+' => self.scan_single_char(Token::Plus),
-                '-' => self.scan_single_char(Token::Minus),
+                '-' => self.scan_double_char(),
                 '*' => self.scan_single_char(Token::Star),
                 '/' => self.scan_single_char(Token::Slash),
 
@@ -199,6 +205,7 @@ impl<'a> Iterator for Lexer<'a> {
 
                 ',' => self.scan_single_char(Token::Comma),
                 ';' => self.scan_single_char(Token::Semi),
+                ':' => self.scan_single_char(Token::Colon),
                 '(' => self.scan_single_char(Token::LParen),
                 ')' => self.scan_single_char(Token::RParen),
                 '{' => self.scan_single_char(Token::LBrace),

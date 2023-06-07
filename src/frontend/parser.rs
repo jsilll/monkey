@@ -3,10 +3,20 @@ use std::iter::Peekable;
 use crate::common::operators::{BinOp, UnOp};
 use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement};
 use crate::common::Position;
+use crate::common::types::Type;
 
 use crate::frontend::lexer::Lexer;
 use crate::frontend::token::{LocatedToken, Token};
 use crate::frontend::{Error, LocatedError};
+
+impl Type {
+    fn from_token(token: &Token<'_>) -> Self {
+        match token {
+            Token::IntType => Type::Int,
+            _ => unreachable!(),
+        }
+    } 
+}
 
 impl UnOp {
     fn from_token(token: &Token<'_>) -> Self {
@@ -122,15 +132,33 @@ impl<'a> Parser<'a> {
     fn parse_top_fn(&mut self) -> Result<TopStatement, LocatedError> {
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::LParen)?;
-        // TODO: Parse Paramters
-        self.expect_next(Token::RParen)?;
-        // TODO: Parse Return Type
+
+        // Parse Paramters
+        let mut params = Vec::new();
+        while let Some(lt) = self.lexer.next() {
+            match lt.token {
+                Token::RParen => break,
+                Token::Id(id) => {
+                    self.expect_next(Token::Colon)?;
+                    self.expect_next(Token::IntType)?;
+                    params.push((id.to_string(), Type::Int));
+                }
+                _ => return Err(self.handle_unexpected_token(lt)),
+            }
+        }
+
+        // Parse Return Type
+        self.expect_next(Token::Arrow)?;
+        let rtype = self.expect_next(Token::IntType)?;
+
         self.expect_next(Token::LBrace)?;
         let body = self.parse_block()?;
         self.expect_next(Token::RBrace)?;
         Ok(TopStatement::Fn {
             body,
+            params,
             id: id.token.to_string(),
+            rtype: Type::from_token(&rtype.token),
         })
     }
 
@@ -248,7 +276,7 @@ impl<'a> Parser<'a> {
                 let expr = self.parse_expression(Precedence::Lowest)?;
                 self.expect_next(Token::RParen)?;
                 Ok(expr)
-            },
+            }
             Token::If => {
                 let condition = self.parse_expression(Precedence::Lowest)?;
                 self.expect_next(Token::LBrace)?;

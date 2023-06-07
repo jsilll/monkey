@@ -15,6 +15,8 @@ impl<'i> Display for Position {
 
 pub mod operators;
 
+pub mod types;
+
 pub mod typed_ast;
 
 pub mod parsed_ast;

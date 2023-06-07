@@ -15,6 +15,8 @@ pub enum Token<'a> {
     Return,
     If,
     Else,
+    // Primitive Types
+    IntType,
     // Identifiers
     Id(&'a str),
     // Assignment Operator
@@ -34,8 +36,10 @@ pub enum Token<'a> {
     // Logical Operators
     Bang,
     // Punctuation
+    Arrow,
     Comma,
     Semi,
+    Colon,
     LParen,
     RParen,
     LBrace,
@@ -63,6 +67,8 @@ impl Display for Token<'_> {
             Token::If => write!(f, "If"),
             Token::Else => write!(f, "Else"),
 
+            Token::IntType => write!(f, "IntType"),
+
             Token::Id(id) => write!(f, "'{}'", id),
 
             Token::Assign => write!(f, "="),
@@ -81,8 +87,10 @@ impl Display for Token<'_> {
 
             Token::Bang => write!(f, "!"),
 
+            Token::Arrow => write!(f, "->"),
             Token::Comma => write!(f, ","),
             Token::Semi => write!(f, ";"),
+            Token::Colon => write!(f, ":"),
             Token::LParen => write!(f, "("),
             Token::RParen => write!(f, ")"),
             Token::LBrace => write!(f, "{{"),
