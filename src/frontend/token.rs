@@ -17,6 +17,7 @@ pub enum Token<'a> {
     Else,
     // Primitive Types
     IntType,
+    BoolType,
     // Identifiers
     Id(&'a str),
     // Assignment Operator
@@ -68,6 +69,7 @@ impl Display for Token<'_> {
             Token::Else => write!(f, "Else"),
 
             Token::IntType => write!(f, "IntType"),
+            Token::BoolType => write!(f, "BoolType"),
 
             Token::Id(id) => write!(f, "'{}'", id),
 

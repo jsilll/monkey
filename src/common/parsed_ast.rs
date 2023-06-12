@@ -78,8 +78,8 @@ pub enum InnerStatement {
 impl Display for InnerStatement {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            InnerStatement::Return(expr) => write!(f, "return {};", expr),
             InnerStatement::Expression(expr) => write!(f, "{};", expr),
+            InnerStatement::Return(expr) => write!(f, "return {};", expr),
             InnerStatement::Var { id, value } => write!(f, "var {} = {};", id, value),
             InnerStatement::Let { id, value } => write!(f, "let {} = {};", id, value),
         }
@@ -87,6 +87,8 @@ impl Display for InnerStatement {
 }
 
 pub type Block = Vec<InnerStatement>;
+
+pub type Param = (Identifier, Type);
 
 #[derive(Debug)]
 pub enum TopStatement {
@@ -97,39 +99,9 @@ pub enum TopStatement {
     Fn {
         id: Identifier,
         rtype: Type,
-        params: Vec<(Identifier, Type)>,
+        params: Vec<Param>,
         body: Block,
     },
-}
-
-impl Display for TopStatement {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TopStatement::Let { id, value } => writeln!(f, "let {} = {};", id, value),
-            TopStatement::Fn {
-                rtype,
-                body,
-                id,
-                params,
-            } => {
-                write!(
-                    f,
-                    "fn {}({}) -> {} {{",
-                    id,
-                    params
-                        .iter()
-                        .map(|(id, t)| format!("{}: {}", id, t))
-                        .collect::<Vec<String>>()
-                        .join(", "),
-                    rtype
-                )?;
-                for statement in body {
-                    writeln!(f, " {}", statement)?;
-                }
-                write!(f, "}}")
-            }
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -142,14 +114,5 @@ impl Program {
         Program {
             statements: Vec::new(),
         }
-    }
-}
-
-impl Display for Program {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for statement in &self.statements {
-            writeln!(f, "{}", statement)?;
-        }
-        Ok(())
     }
 }

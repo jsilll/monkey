@@ -1,9 +1,11 @@
 use std::iter::Peekable;
 
 use crate::common::operators::{BinOp, UnOp};
-use crate::common::parsed_ast::{Block, Expression, InnerStatement, Program, TopStatement, Identifier};
-use crate::common::Position;
+use crate::common::parsed_ast::{
+    Block, Expression, Identifier, InnerStatement, Program, TopStatement,
+};
 use crate::common::types::Type;
+use crate::common::Position;
 
 use crate::frontend::lexer::Lexer;
 use crate::frontend::token::{LocatedToken, Token};
@@ -124,10 +126,8 @@ impl<'a> Parser<'a> {
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::LParen)?;
 
-        // Parse Paramters
-        let params = self.parse_top_fn_params()?; 
+        let params = self.parse_top_fn_params()?;
 
-        // Parse Return Type
         self.expect_next(Token::Arrow)?;
         let rtype = self.parse_type()?;
 
@@ -143,19 +143,34 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_top_fn_params(&mut self) -> Result<Vec<(Identifier, Type)>, LocatedError> {
-        let mut params = Vec::new();
-        while let Some(lt) = self.lexer.next() {
-            match lt.token {
-                Token::Id(id) => {
-                    self.expect_next(Token::Colon)?;
-                    let ty = self.parse_type()?;
-                    params.push((id.to_string(), ty));
-                }
-                Token::RParen => break,
-                _ => return Err(self.handle_unexpected_token(lt)),
+        let lt = self.lexer.next().ok_or(LocatedError {
+            error: Error::UnexpectedEof,
+            position: self.fallback_position.clone(),
+        })?;
+        match lt.token {
+            Token::RParen => {
+                return Ok(Vec::new());
             }
+            Token::Id(id) => {
+                self.expect_next(Token::Colon)?;
+                let ty = self.parse_type()?;
+                let mut params = vec![(id.to_string(), ty)];
+                while let Some(lt) = self.lexer.next() {
+                    match lt.token {
+                        Token::Comma => {
+                            let id = self.expect_next(Token::Id(""))?;
+                            self.expect_next(Token::Colon)?;
+                            let ty = self.parse_type()?;
+                            params.push((id.token.to_string(), ty));
+                        }
+                        Token::RParen => break,
+                        _ => return Err(self.handle_unexpected_token(lt)),
+                    }
+                }
+                Ok(params)
+            }
+            _ => return Err(self.handle_unexpected_token(lt)),
         }
-        Ok(params)
     }
 
     fn parse_type(&mut self) -> Result<Type, LocatedError> {
@@ -165,6 +180,7 @@ impl<'a> Parser<'a> {
         })?;
         match lt.token {
             Token::IntType => Ok(Type::Int),
+            Token::BoolType => Ok(Type::Bool),
             _ => Err(self.handle_unexpected_token(lt)),
         }
     }

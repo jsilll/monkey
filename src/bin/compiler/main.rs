@@ -11,7 +11,7 @@ fn parse(fname: &str, source: &str) -> Result<Program, LocatedError> {
 }
 
 fn main() {
-    let fname = "test/src/1.monkey";
+    let fname = "test/src/2.monkey";
     let source = std::fs::read_to_string(fname).unwrap();
 
     let program = parse(fname, &source).unwrap_or_else(|e| {

@@ -2,32 +2,46 @@ let five = 5;
 
 let ten = 10;
 
-let add = fn(x, y) {  
+fn add(x : i64, y : i64) -> i64 {  
   x + y;
-};
+}
 
-let equal = fn(x, y) {  
+fn subtract(x : i64, y : i64) -> i64 {  
+  x - y;
+}
+
+fn multiply(x : i64, y : i64) -> i64 {  
+  x * y;
+}
+
+fn divide(x : i64, y : i64) -> i64 {  
+  x / y;
+}
+
+fn equals(x : i64 , y : i64) -> bool {  
   x == y;
-};
+}
 
-let notEqual = fn(x, y) {  
+fn not_equals(x : i64, y : i64) -> bool {  
   x != y;
-};
+}
 
-let lt = fn(x, y) {  
+fn less_than(x : i64, y : i64) -> bool {  
   x < y;
-};
+}
 
-let gt = fn(x, y) {  
-  x >y;
-};
+fn greater_than (x : i64, y : i64) -> bool {  
+  x > y;
+}
 
-let lte = fn(x, y) {  
+fn less_than_or_equal
+(x : i64, y : i64) -> bool {  
   x <= y;
-};
+}
 
-let gte = fn(x, y) {  
-  x >=y;
-};
+fn greater_than_or_equal
+(x : i64, y : i64) -> bool {  
+  x >= y;
+}
 
 let result = add(five, ten);

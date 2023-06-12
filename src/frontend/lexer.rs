@@ -114,6 +114,11 @@ impl<'a> Lexer<'a> {
                 token: Token::IntType,
             }),
 
+            "bool" => Some(LocatedToken {
+                position,
+                token: Token::BoolType,
+            }),
+
             id => Some(LocatedToken {
                 position,
                 token: Token::Id(id),
