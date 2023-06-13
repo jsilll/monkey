@@ -22,17 +22,19 @@ impl UnOp {
 }
 
 impl BinOp {
-    fn from_token(token: &Token<'_>) -> Self {
+    fn from_token(token: &Token<'_>) -> Option<Self> {
         match token {
-            Token::Plus => BinOp::Plus,
-            Token::Minus => BinOp::Minus,
-            Token::Star => BinOp::Star,
-            Token::Slash => BinOp::Slash,
-            Token::Eq => BinOp::Eq,
-            Token::Neq => BinOp::Neq,
-            Token::Lt => BinOp::Lt,
-            Token::Gt => BinOp::Gt,
-            _ => unreachable!(),
+            Token::Plus => Some(BinOp::Plus),
+            Token::Minus => Some(BinOp::Minus),
+            Token::Star => Some(BinOp::Star),
+            Token::Slash => Some(BinOp::Slash),
+            Token::Eq => Some(BinOp::Eq),
+            Token::Neq => Some(BinOp::Neq),
+            Token::Lt => Some(BinOp::Lt),
+            Token::Gt => Some(BinOp::Gt),
+            Token::Lte => Some(BinOp::Lte),
+            Token::Gte => Some(BinOp::Gte),
+            _ => None,
         }
     }
 }
@@ -53,8 +55,8 @@ impl Precedence {
         match token {
             Token::Eq | Token::Neq => Precedence::Equals,
             Token::Plus | Token::Minus => Precedence::Sum,
-            Token::Lt | Token::Gt => Precedence::LessGreater,
             Token::Star | Token::Slash => Precedence::Product,
+            Token::Lt | Token::Gt | Token::Lte | Token::Gte => Precedence::LessGreater,
             _ => Precedence::Lowest,
         }
     }
@@ -339,7 +341,7 @@ impl<'a> Parser<'a> {
         Ok(Expression::Binary {
             lhs: Box::new(lhs),
             rhs: Box::new(rhs),
-            op: BinOp::from_token(&lt.token),
+            op: BinOp::from_token(&lt.token).ok_or(self.handle_unexpected_token(lt))?,
         })
     }
 }

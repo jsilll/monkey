@@ -44,4 +44,4 @@ fn greater_than_or_equal
   x >= y;
 }
 
-let result = add(five, ten);
+let add_result = add(five, ten);
