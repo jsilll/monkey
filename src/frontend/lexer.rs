@@ -142,37 +142,21 @@ impl<'a> Lexer<'a> {
         Some(LocatedToken { token, position })
     }
 
-    fn scan_double_char(&mut self) -> Option<LocatedToken<'a>> {
+    fn scan_double_char(&mut self, exp : char, res: Token<'a>, fall : Token<'a>) -> Option<LocatedToken<'a>> {
         let position = self.position.clone();
+        self.chars.next();
         self.position.column += 1;
-        let (exp, res, fall) = match self.chars.next()?.1 {
-            '>' => ('=', Token::Gte, Token::Gt),
-            '<' => ('=', Token::Lte, Token::Lt),
-            '!' => ('=', Token::Neq, Token::Bang),
-            '=' => ('=', Token::Eq, Token::Assign),
-            '-' => ('>', Token::Arrow, Token::Minus),
-            _ => unreachable!(),
-        };
         Some(LocatedToken {
             position,
-            token: self.make_double_char(exp, res, fall)?,
+            token: match self.chars.peek()?.1 {
+                c if c == exp => {
+                    self.chars.next();
+                    self.position.column += 1;
+                    res
+                }
+                _ => fall,
+            },
         })
-    }
-
-    fn make_double_char(
-        &mut self,
-        exp: char,
-        res: Token<'a>,
-        fall: Token<'a>,
-    ) -> Option<Token<'a>> {
-        match self.chars.peek()?.1 {
-            c if c == exp => {
-                self.chars.next();
-                self.position.column += 1;
-                Some(res)
-            }
-            _ => Some(fall),
-        }
     }
 
     fn scan_unexpected(&mut self) -> Option<LocatedToken<'a>> {
@@ -196,18 +180,10 @@ impl<'a> Iterator for Lexer<'a> {
                 c if c.is_numeric() => self.scan_integer(),
                 c if c.is_alphabetic() || *c == '_' => self.scan_name(),
 
-                '=' => self.scan_double_char(),
-
                 '+' => self.scan_single_char(Token::Plus),
-                '-' => self.scan_double_char(),
                 '*' => self.scan_single_char(Token::Star),
                 '/' => self.scan_single_char(Token::Slash),
-
-                '<' => self.scan_double_char(),
-                '>' => self.scan_double_char(),
-
-                '!' => self.scan_double_char(),
-
+                
                 ',' => self.scan_single_char(Token::Comma),
                 ';' => self.scan_single_char(Token::Semi),
                 ':' => self.scan_single_char(Token::Colon),
@@ -215,6 +191,12 @@ impl<'a> Iterator for Lexer<'a> {
                 ')' => self.scan_single_char(Token::RParen),
                 '{' => self.scan_single_char(Token::LBrace),
                 '}' => self.scan_single_char(Token::RBrace),
+
+                '<' => self.scan_double_char('=', Token::Lte, Token::Lt),
+                '>' => self.scan_double_char('=', Token::Gte, Token::Gt),
+                '!' => self.scan_double_char('=', Token::Neq, Token::Bang),
+                '=' => self.scan_double_char('=', Token::Eq, Token::Assign),
+                '-' => self.scan_double_char('>', Token::Arrow, Token::Minus),
 
                 _ => self.scan_unexpected(),
             }
