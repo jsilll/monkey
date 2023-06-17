@@ -22,8 +22,9 @@ pub enum BinOp {
     Minus,
     Star,
     Slash,
+
     // Comparison Operators
-    Eq, 
+    Eq,
     Neq,
     Lt,
     Gt,
@@ -38,7 +39,6 @@ impl Display for BinOp {
             BinOp::Minus => write!(f, "-"),
             BinOp::Star => write!(f, "*"),
             BinOp::Slash => write!(f, "/"),
-
             BinOp::Eq => write!(f, "=="),
             BinOp::Neq => write!(f, "!="),
             BinOp::Lt => write!(f, "<"),

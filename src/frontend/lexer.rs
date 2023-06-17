@@ -35,12 +35,10 @@ impl<'a> Lexer<'a> {
                     self.position.line += 1;
                     self.position.column = 1;
                 }
-
                 ' ' | '\t' | '\r' => {
                     self.chars.next();
                     self.position.column += 1;
                 }
-
                 _ => break,
             }
         }
@@ -54,7 +52,6 @@ impl<'a> Lexer<'a> {
                     self.chars.next();
                     self.position.column += 1;
                 }
-
                 _ => {
                     break match self.chars.peek() {
                         Some((idx, _)) => *idx,
@@ -73,52 +70,42 @@ impl<'a> Lexer<'a> {
                 position,
                 token: Token::True,
             }),
-
             "false" => Some(LocatedToken {
                 position,
                 token: Token::False,
             }),
-
             "fn" => Some(LocatedToken {
                 position,
                 token: Token::Fn,
             }),
-
             "let" => Some(LocatedToken {
                 position,
                 token: Token::Let,
             }),
-
             "var" => Some(LocatedToken {
                 position,
                 token: Token::Var,
             }),
-
             "return" => Some(LocatedToken {
                 position,
                 token: Token::Return,
             }),
-
             "if" => Some(LocatedToken {
                 position,
                 token: Token::If,
             }),
-
             "else" => Some(LocatedToken {
                 position,
                 token: Token::Else,
             }),
-
             "i64" => Some(LocatedToken {
                 position,
                 token: Token::IntType,
             }),
-
             "bool" => Some(LocatedToken {
                 position,
                 token: Token::BoolType,
             }),
-
             id => Some(LocatedToken {
                 position,
                 token: Token::Id(id),
@@ -179,11 +166,9 @@ impl<'a> Iterator for Lexer<'a> {
             match c {
                 c if c.is_numeric() => self.scan_integer(),
                 c if c.is_alphabetic() || *c == '_' => self.scan_name(),
-
                 '+' => self.scan_single_char(Token::Plus),
                 '*' => self.scan_single_char(Token::Star),
                 '/' => self.scan_single_char(Token::Slash),
-                
                 ',' => self.scan_single_char(Token::Comma),
                 ';' => self.scan_single_char(Token::Semi),
                 ':' => self.scan_single_char(Token::Colon),
@@ -191,13 +176,11 @@ impl<'a> Iterator for Lexer<'a> {
                 ')' => self.scan_single_char(Token::RParen),
                 '{' => self.scan_single_char(Token::LBrace),
                 '}' => self.scan_single_char(Token::RBrace),
-
                 '<' => self.scan_double_char('=', Token::Lte, Token::Lt),
                 '>' => self.scan_double_char('=', Token::Gte, Token::Gt),
                 '!' => self.scan_double_char('=', Token::Neq, Token::Bang),
                 '=' => self.scan_double_char('=', Token::Eq, Token::Assign),
                 '-' => self.scan_double_char('>', Token::Arrow, Token::Minus),
-
                 _ => self.scan_unexpected(),
             }
         } else {

@@ -32,16 +32,16 @@ pub enum Expression {
     If {
         condition: Box<Expression>,
         consequence: Block,
-        otherwise: Option<Block>,
+        otherwise: Block,
     },
 }
 
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expression::BooleanLiteral { value, .. } => write!(f, "{}", value),
-            Expression::IntegerLiteral { value, .. } => write!(f, "{}", value),
             Expression::Lvalue { id, .. } => write!(f, "{}", id),
+            Expression::IntegerLiteral { value, .. } => write!(f, "{}", value),
+            Expression::BooleanLiteral { value, .. } => write!(f, "{}", value),
             Expression::Unary { op, rhs } => write!(f, "({} {})", op, rhs),
             Expression::Binary { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
             Expression::If {
@@ -53,15 +53,11 @@ impl Display for Expression {
                 for statement in consequence {
                     writeln!(f, " {}", statement)?;
                 }
-                write!(f, "}}")?;
-                if let Some(otherwise) = otherwise {
-                    write!(f, " else {{")?;
-                    for statement in otherwise {
-                        writeln!(f, " {}", statement)?;
-                    }
-                    write!(f, "}}")?;
+                write!(f, "}} else {{")?;
+                for statement in otherwise {
+                    writeln!(f, " {}", statement)?;
                 }
-                Ok(())
+                write!(f, "}}")
             }
         }
     }

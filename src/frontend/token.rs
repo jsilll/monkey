@@ -8,6 +8,7 @@ pub enum Token<'a> {
     True,
     False,
     Int(&'a str),
+
     // Keywords
     Fn,
     Let,
@@ -15,18 +16,23 @@ pub enum Token<'a> {
     Return,
     If,
     Else,
+
     // Primitive Types
     IntType,
     BoolType,
+
     // Identifiers
     Id(&'a str),
+
     // Assignment Operator
     Assign,
+
     // Arithmetic Operators
     Plus,
     Minus,
     Star,
     Slash,
+
     // Comparison Operators
     Eq,
     Neq,
@@ -34,8 +40,10 @@ pub enum Token<'a> {
     Gt,
     Lte,
     Gte,
+
     // Logical Operators
     Bang,
+
     // Punctuation
     Arrow,
     Comma,
@@ -45,6 +53,7 @@ pub enum Token<'a> {
     RParen,
     LBrace,
     RBrace,
+
     // Unexpected
     Unexpected(char),
 }
@@ -57,14 +66,15 @@ pub struct LocatedToken<'a> {
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Int(i) => write!(f, "{}", i),
             Token::True => write!(f, "true"),
             Token::False => write!(f, "false"),
+            Token::Int(i) => write!(f, "{}", i),
 
             Token::Fn => write!(f, "Fn"),
             Token::Let => write!(f, "Let"),
             Token::Var => write!(f, "Var"),
             Token::Return => write!(f, "Return"),
+
             Token::If => write!(f, "If"),
             Token::Else => write!(f, "Else"),
 

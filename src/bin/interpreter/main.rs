@@ -13,17 +13,13 @@ fn main() {
             eprintln!("Error flushing stdout: {}", e);
             std::process::exit(1);
         });
-
         let mut source = String::new();
         std::io::stdin().read_line(&mut source).unwrap_or_else(|e| {
             eprintln!("Error reading from stdin: {}", e);
             std::process::exit(1);
         });
-
         let lexer = Lexer::new(fname, &source);
-        let mut parser = Parser::new(lexer);
-
-        match parser.parse() {
+        match Parser::new(lexer).parse() {
             Err(e) => eprintln!("{}", e),
             Ok(program) => match program.statements.len() {
                 0 => (),

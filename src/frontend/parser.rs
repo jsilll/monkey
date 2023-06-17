@@ -127,12 +127,9 @@ impl<'a> Parser<'a> {
     fn parse_top_fn(&mut self) -> Result<TopStatement, LocatedError> {
         let id = self.expect_next(Token::Id(""))?;
         self.expect_next(Token::LParen)?;
-
         let params = self.parse_top_fn_params()?;
-
         self.expect_next(Token::Arrow)?;
         let rtype = self.parse_type()?;
-
         self.expect_next(Token::LBrace)?;
         let body = self.parse_block()?;
         self.expect_next(Token::RBrace)?;
@@ -181,7 +178,7 @@ impl<'a> Parser<'a> {
             position: self.fallback_position.clone(),
         })?;
         match lt.token {
-            Token::IntType => Ok(Type::Int),
+            Token::IntType => Ok(Type::Int64),
             Token::BoolType => Ok(Type::Bool),
             _ => Err(self.handle_unexpected_token(lt)),
         }
@@ -307,20 +304,10 @@ impl<'a> Parser<'a> {
                 self.expect_next(Token::LBrace)?;
                 let consequence = self.parse_block()?;
                 self.expect_next(Token::RBrace)?;
-                let otherwise = if let Some(lt) = self.lexer.peek() {
-                    match lt.token {
-                        Token::Else => {
-                            self.lexer.next();
-                            self.expect_next(Token::LBrace)?;
-                            let block = self.parse_block()?;
-                            self.expect_next(Token::RBrace)?;
-                            Some(block)
-                        }
-                        _ => None,
-                    }
-                } else {
-                    None
-                };
+                self.expect_next(Token::Else)?;
+                self.expect_next(Token::LBrace)?;
+                let otherwise = self.parse_block()?;
+                self.expect_next(Token::RBrace)?;
                 Ok(Expression::If {
                     condition: Box::new(condition),
                     consequence,
