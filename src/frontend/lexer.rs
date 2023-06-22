@@ -86,10 +86,6 @@ impl<'a> Lexer<'a> {
                 position,
                 token: Token::Var,
             }),
-            "return" => Some(LocatedToken {
-                position,
-                token: Token::Return,
-            }),
             "if" => Some(LocatedToken {
                 position,
                 token: Token::If,
