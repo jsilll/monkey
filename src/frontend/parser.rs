@@ -191,6 +191,7 @@ impl<'a> Parser<'a> {
                 Token::RBrace => break,
                 Token::Let => statements.push(self.parse_inner_let()?),
                 Token::Var => statements.push(self.parse_inner_var()?),
+                Token::Return => statements.push(self.parse_inner_return()?),
                 _ => statements.push(self.parse_expression_statement()?),
             }
         }
@@ -219,6 +220,13 @@ impl<'a> Parser<'a> {
             value,
             id: id.token.to_string(),
         })
+    }
+
+    fn parse_inner_return(&mut self) -> Result<InnerStatement, LocatedError> {
+        self.expect_next(Token::Return)?;
+        let value = self.parse_expression(Precedence::Lowest)?;
+        self.expect_next(Token::Semi)?;
+        Ok(InnerStatement::Return(value))
     }
 
     fn parse_expression_statement(&mut self) -> Result<InnerStatement, LocatedError> {
