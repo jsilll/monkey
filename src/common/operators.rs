@@ -22,7 +22,6 @@ pub enum BinOp {
     Minus,
     Star,
     Slash,
-
     // Comparison Operators
     Eq,
     Neq,

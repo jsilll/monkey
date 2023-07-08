@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Program, LocatedError> {
+    pub fn parse(mut self) -> Result<Program, LocatedError> {
         let mut program = Program::new();
         while let Some(lt) = self.lexer.next() {
             match lt.token {
@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
             position: self.fallback_position.clone(),
         })?;
         match lt.token {
-            Token::IntType => Ok(Type::Int64),
+            Token::IntType => Ok(Type::Int32),
             Token::BoolType => Ok(Type::Bool),
             _ => Err(self.handle_unexpected_token(lt)),
         }

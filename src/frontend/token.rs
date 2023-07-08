@@ -8,7 +8,6 @@ pub enum Token<'a> {
     True,
     False,
     Int(&'a str),
-
     // Keywords
     Fn,
     Let,
@@ -16,23 +15,18 @@ pub enum Token<'a> {
     Return,
     If,
     Else,
-
     // Primitive Types
     IntType,
     BoolType,
-
     // Identifiers
     Id(&'a str),
-
     // Assignment Operator
     Assign,
-
     // Arithmetic Operators
     Plus,
     Minus,
     Star,
     Slash,
-
     // Comparison Operators
     Eq,
     Neq,
@@ -40,10 +34,8 @@ pub enum Token<'a> {
     Gt,
     Lte,
     Gte,
-
     // Logical Operators
     Bang,
-
     // Punctuation
     Arrow,
     Comma,
@@ -53,7 +45,6 @@ pub enum Token<'a> {
     RParen,
     LBrace,
     RBrace,
-
     // Unexpected
     Unexpected(char),
 }
