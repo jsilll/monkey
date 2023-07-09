@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::common::operators::{BinOp, UnOp};
 use crate::common::parsed_ast::{
-    Block, Expression, Identifier, InnerStatement, Program, TopStatement,
+    Block, Expression, Identifier, InnerStatement, File, TopStatement,
 };
 use crate::common::types::Type;
 use crate::common::Position;
@@ -100,8 +100,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(mut self) -> Result<Program, LocatedError> {
-        let mut program = Program::new();
+    pub fn parse(mut self) -> Result<File, LocatedError> {
+        let mut program = File::new();
         while let Some(lt) = self.lexer.next() {
             match lt.token {
                 Token::Fn => program.statements.push(self.parse_top_fn()?),

@@ -2,6 +2,7 @@ use clap::Parser as ClapParser;
 
 use monkey::frontend::lexer::Lexer;
 use monkey::frontend::parser::Parser;
+use monkey::frontend::typing::TypeChecker;
 
 #[derive(Debug, ClapParser)]
 #[clap(author, version, about)]
@@ -22,7 +23,7 @@ fn main() {
 
     // Parsing the source file
     let parser = Parser::new(Lexer::new(&args.fname, &source));
-    let ast = parser.parse().unwrap_or_else(|e| match e.error {
+    let file = parser.parse().unwrap_or_else(|e| match e.error {
         monkey::frontend::Error::UnexpectedChar(_) => {
             eprintln!("Lexer error: {}", e);
             std::process::exit(1);
@@ -38,6 +39,13 @@ fn main() {
     // Explicitly dropping the source file to free memory
     drop(source);
 
+    // Type checking the AST
+    let type_checker = TypeChecker::new(file);
+    let typed_file = type_checker.check().unwrap_or_else(|e| {
+        eprintln!("Type error: {}", e);
+        std::process::exit(1);
+    });
+
     // Printing the AST
-    println!("{:#?}", ast);
+    println!("{:#?}", typed_file);
 }

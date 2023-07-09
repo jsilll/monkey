@@ -118,13 +118,13 @@ pub enum TopStatement {
 }
 
 #[derive(Debug)]
-pub struct Program {
+pub struct File {
     pub statements: Vec<TopStatement>,
 }
 
-impl Program {
+impl File {
     pub fn new() -> Self {
-        Program {
+        File {
             statements: Vec::new(),
         }
     }
