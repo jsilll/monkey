@@ -53,6 +53,7 @@ enum Precedence {
 impl Precedence {
     fn from_token(token: &Token<'_>) -> Self {
         match token {
+            Token::LParen => Precedence::Call,
             Token::Eq | Token::Neq => Precedence::Equals,
             Token::Plus | Token::Minus => Precedence::Sum,
             Token::Star | Token::Slash => Precedence::Product,
@@ -89,15 +90,13 @@ impl<'a> Parser<'a> {
     }
 
     fn expect_next(&mut self, expected: Token) -> Result<LocatedToken<'a>, LocatedError> {
-        match self.lexer.next() {
-            Some(lt) if std::mem::discriminant(&lt.token) == std::mem::discriminant(&expected) => {
-                Ok(lt)
-            }
-            Some(lt) => Err(self.handle_unexpected_token(lt)),
-            None => Err(LocatedError {
-                error: Error::UnexpectedEof,
-                position: self.fallback_position.clone(),
-            }),
+        let lt = self.lexer.next().ok_or(LocatedError {
+            error: Error::UnexpectedEof,
+            position: self.fallback_position.clone(),
+        })?;
+        match &lt.token {
+            gotten if std::mem::discriminant(gotten) == std::mem::discriminant(&expected) => Ok(lt),
+            _ => Err(self.handle_unexpected_token(lt)),
         }
     }
 
@@ -178,8 +177,8 @@ impl<'a> Parser<'a> {
             position: self.fallback_position.clone(),
         })?;
         match lt.token {
-            Token::IntType => Ok(Type::Int32),
-            Token::BoolType => Ok(Type::Bool),
+            Token::Int32 => Ok(Type::Int32),
+            Token::Bool => Ok(Type::Bool),
             _ => Err(self.handle_unexpected_token(lt)),
         }
     }
@@ -324,12 +323,54 @@ impl<'a> Parser<'a> {
             position: self.fallback_position.clone(),
         })?;
         let precedence = Precedence::from_token(&lt.token);
-        let rhs = self.parse_expression(precedence)?;
-        Ok(Expression::Binary {
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
-            op: BinOp::from_token(&lt.token).ok_or(self.handle_unexpected_token(lt))?,
-        })
+        match BinOp::from_token(&lt.token) {
+            Some(op) => {
+                let rhs = self.parse_expression(precedence)?;
+                Ok(Expression::Binary {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
+            None => match lt.token {
+                Token::LParen => Ok(Expression::Call {
+                    function: Box::new(lhs),
+                    arguments: self.parse_call_args()?,
+                }),
+                _ => Err(self.handle_unexpected_token(lt)),
+            },
+        }
+    }
+
+    fn parse_call_args(&mut self) -> Result<Vec<Expression>, LocatedError> {
+        match self.lexer.peek() {
+            Some(lt) if lt.token == Token::RParen => {
+                self.lexer.next();
+                Ok(Vec::new())
+            }
+            Some(_) => {
+                let mut args = Vec::new();
+                loop {
+                    args.push(self.parse_expression(Precedence::Lowest)?);
+                    let lt = self.lexer.next().ok_or(LocatedError {
+                        error: Error::UnexpectedEof,
+                        position: self.fallback_position.clone(),
+                    })?;
+                    match lt.token {
+                        Token::RParen => break,
+                        Token::Comma => continue,
+                        _ => return Err(self.handle_unexpected_token(lt)),
+                    }
+                }
+                Ok(args)
+            }
+            None => {
+                return Err(LocatedError {
+                    error: Error::UnexpectedEof,
+                    position: self.fallback_position.clone(),
+                })
+            }
+        }
     }
 }
 

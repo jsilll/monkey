@@ -29,6 +29,10 @@ pub enum Expression {
         lhs: Box<Expression>,
         rhs: Box<Expression>,
     },
+    Call {
+        function: Box<Expression>,
+        arguments: Vec<Expression>,
+    },
     If {
         condition: Box<Expression>,
         consequence: Block,
@@ -44,6 +48,19 @@ impl Display for Expression {
             Expression::BooleanLiteral { value, .. } => write!(f, "{}", value),
             Expression::Unary { op, rhs } => write!(f, "({} {})", op, rhs),
             Expression::Binary { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
+            Expression::Call {
+                function,
+                arguments,
+            } => {
+                write!(f, "{}(", function)?;
+                for (i, arg) in arguments.iter().enumerate() {
+                    if i != 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", arg)?;
+                }
+                write!(f, ")")
+            }
             Expression::If {
                 condition,
                 consequence,

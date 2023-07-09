@@ -11,8 +11,10 @@ struct CompilerArgs {
 }
 
 fn main() {
-    // Reading the source file to memory
+    // Parsing the command line arguments
     let args = CompilerArgs::parse();
+
+    // Reading the source file to memory
     let source = std::fs::read_to_string(&args.fname).unwrap_or_else(|e| {
         eprintln!("Error reading file: {}", e);
         std::process::exit(1);

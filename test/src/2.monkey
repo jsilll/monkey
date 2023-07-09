@@ -2,46 +2,50 @@ let five = 5;
 
 let ten = 10;
 
-fn add(x : i64, y : i64) -> i64 {  
+fn add(x : i32, y : i32) -> i32 {  
   x + y;
 }
 
-fn subtract(x : i64, y : i64) -> i64 {  
+fn subtract(x : i32, y : i32) -> i32 {  
   x - y;
 }
 
-fn multiply(x : i64, y : i64) -> i64 {  
+fn multiply(x : i32, y : i32) -> i32 {  
   x * y;
 }
 
-fn divide(x : i64, y : i64) -> i64 {  
+fn divide(x : i32, y : i32) -> i32 {  
   x / y;
 }
 
-fn equals(x : i64 , y : i64) -> bool {  
+fn equals(x : i32 , y : i32) -> bool {  
   x == y;
 }
 
-fn not_equals(x : i64, y : i64) -> bool {  
+fn not_equals(x : i32, y : i32) -> bool {  
   x != y;
 }
 
-fn less_than(x : i64, y : i64) -> bool {  
+fn less_than(x : i32, y : i32) -> bool {  
   x < y;
 }
 
-fn greater_than (x : i64, y : i64) -> bool {  
+fn greater_than (x : i32, y : i32) -> bool {  
   x > y;
 }
 
 fn less_than_or_equal
-(x : i64, y : i64) -> bool {  
+(x : i32, y : i32) -> bool {  
   x <= y;
 }
 
 fn greater_than_or_equal
-(x : i64, y : i64) -> bool {  
+(x : i32, y : i32) -> bool {  
   x >= y;
 }
 
-let add_result = add(five, ten);
+let add_result = add(1, 2 * 3, 4 + 5);
+
+fn main() -> i32 {
+  add_result;
+}

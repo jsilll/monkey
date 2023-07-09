@@ -98,13 +98,13 @@ impl<'a> Lexer<'a> {
                 position,
                 token: Token::Else,
             }),
-            "i64" => Some(LocatedToken {
-                position,
-                token: Token::IntType,
-            }),
             "bool" => Some(LocatedToken {
                 position,
-                token: Token::BoolType,
+                token: Token::Bool,
+            }),
+            "i32" => Some(LocatedToken {
+                position,
+                token: Token::Int32,
             }),
             id => Some(LocatedToken {
                 position,
@@ -129,7 +129,12 @@ impl<'a> Lexer<'a> {
         Some(LocatedToken { token, position })
     }
 
-    fn scan_double_char(&mut self, exp : char, res: Token<'a>, fall : Token<'a>) -> Option<LocatedToken<'a>> {
+    fn scan_double_char(
+        &mut self,
+        exp: char,
+        res: Token<'a>,
+        fall: Token<'a>,
+    ) -> Option<LocatedToken<'a>> {
         let position = self.position.clone();
         self.chars.next();
         self.position.column += 1;

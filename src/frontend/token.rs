@@ -16,8 +16,8 @@ pub enum Token<'a> {
     If,
     Else,
     // Primitive Types
-    IntType,
-    BoolType,
+    Bool,
+    Int32,
     // Identifiers
     Id(&'a str),
     // Assignment Operator
@@ -69,8 +69,8 @@ impl Display for Token<'_> {
             Token::If => write!(f, "If"),
             Token::Else => write!(f, "Else"),
 
-            Token::IntType => write!(f, "IntType"),
-            Token::BoolType => write!(f, "BoolType"),
+            Token::Bool => write!(f, "Bool"),
+            Token::Int32 => write!(f, "Int32"),
 
             Token::Id(id) => write!(f, "'{}'", id),
 
