@@ -49,33 +49,14 @@ impl Display for Expression {
             Expression::Unary { op, rhs } => write!(f, "({} {})", op, rhs),
             Expression::Binary { op, lhs, rhs } => write!(f, "({} {} {})", lhs, op, rhs),
             Expression::Call {
-                function,
-                arguments,
-            } => {
-                write!(f, "{}(", function)?;
-                for (i, arg) in arguments.iter().enumerate() {
-                    if i != 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{}", arg)?;
-                }
-                write!(f, ")")
-            }
+                function : _,
+                arguments: _,
+            } => unimplemented!(),
             Expression::If {
-                condition,
-                consequence,
-                otherwise,
-            } => {
-                write!(f, "if {} {{", condition)?;
-                for statement in consequence {
-                    writeln!(f, " {}", statement)?;
-                }
-                write!(f, "}} else {{")?;
-                for statement in otherwise {
-                    writeln!(f, " {}", statement)?;
-                }
-                write!(f, "}}")
-            }
+                condition : _,
+                consequence : _,
+                otherwise : _,
+            } => unimplemented!(),
         }
     }
 }
